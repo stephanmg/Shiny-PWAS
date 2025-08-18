@@ -1,18 +1,19 @@
 # app.py
-from shiny import App, render, reactive
-import pandas as pd
-import matplotlib.pyplot as plt
 import math
 
-from ui import make_ui
+import matplotlib.pyplot as plt
+import pandas as pd
+from shiny import App, reactive, render
+
 from backend import (
+    fetch_gene_results,
     parse_gene_list,
     resolve_gene,
-    fetch_gene_results,
     tidy_table,
     top_n_per_gene,
 )
-from plotting import KIND_ORDER, KIND_LABEL, prepare_plot_df, apply_scale, add_jitter
+from plotting import KIND_LABEL, KIND_ORDER, add_jitter, apply_scale, prepare_plot_df
+from ui import make_ui
 
 app_ui = make_ui()
 

@@ -1,8 +1,8 @@
 # backend.py
 from functools import lru_cache
-import requests
+
 import pandas as pd
-import numpy as np
+import requests
 
 API = "https://exphewas.statgen.org/v1/api"
 CAT_KEEP = ["outcome_id", "description", "outcome_string", "name", "label", "phenotype"]

@@ -1,5 +1,6 @@
-import requests
 from collections import defaultdict
+
+import requests
 
 API = "https://exphewas.statgen.org/v1/api"
 
