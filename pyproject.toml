@@ -1,0 +1,7 @@
+[tool.ruff]
+line-length = 88          # match Black
+target-version = "py310"  # your Python version
+select = ["E", "F", "I"]  # Errors, Flake8, Import rules
+ignore = ["E501"]         # example: ignore long lines if Black handles wrapping
+fix = true                # allow autofix (use with pre-commit)
+
