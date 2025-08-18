@@ -13,7 +13,7 @@ Website: https://shiny.iaas.uni-bonn.de/Shiny-PWAS
 
 ## Installation
 
-See `requirements.txt`
+See `requirements.txt` for regular users. Developers need to install also `requirements-dev.txt`.
 
 ## Run
 
