@@ -13,3 +13,7 @@ Website: https://shiny.iaas.uni-bonn.de/Shiny-PWAS
 ## Installation
 
 See `requirements.txt`
+
+## Run
+
+Execute `startApp.sh` and adjust host and port to your needs.
