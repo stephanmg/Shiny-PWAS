@@ -5,10 +5,9 @@ import pandas as pd
 import backend
 
 
-# -----------------------
-# Helpers / fake responses
-# -----------------------
 class FakeResponse:
+    """Class to mock requests"""
+
     def __init__(self, json_data, status=200):
         self._json = json_data
         self.status_code = status
@@ -81,9 +80,9 @@ def fake_requests_get(url, timeout=30, params=None):
     return FakeResponse({"unknown": True}, status=404)
 
 
-# -----------------------
-# Unit tests
-# -----------------------
+###############################################################################
+# TESTS
+###############################################################################
 
 
 def test_parse_gene_list_basic():
