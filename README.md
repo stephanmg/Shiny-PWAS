@@ -2,8 +2,9 @@
 
 [![Shiny](https://img.shields.io/badge/Shiny-1.4.0-brightgreen?style=flat-square)](#)
 [![Python](https://img.shields.io/badge/Python-3.10.12-3776AB?style=flat-square&logo=python&logoColor=white)](#)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
-[![Lint](https://github.com/stephanmg/Shiny-PWAS/actions/workflows/ci.yml/badge.svg)](https://github.com/stephanmg/Shiny-PWAS/actions/workflows/ci.yml)
+[![Black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
+[![CI](https://github.com/stephanmg/Shiny-PWAS/actions/workflows/ci.yml/badge.svg)](https://github.com/stephanmg/Shiny-PWAS/actions/workflows/ci.yml)
+[![Test](https://github.com/stephanmg/Shiny-PWAS/actions/workflows/pytest.yml/badge.svg)](https://github.com/stephanmg/Shiny-PWAS/actions/workflows/pytest.yml)
 
 ## About
 
