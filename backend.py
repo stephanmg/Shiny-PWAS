@@ -1,4 +1,3 @@
-# backend.py
 from functools import lru_cache
 
 import pandas as pd
