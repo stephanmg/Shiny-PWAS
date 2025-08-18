@@ -2,7 +2,7 @@
 
 [![Shiny](https://img.shields.io/badge/Shiny-1.4.0-brightgreen?style=flat-square)](#)
 [![Python](https://img.shields.io/badge/Python-3.10.12-3776AB?style=flat-square&logo=python&logoColor=white)](#)
-
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
 
 ## About
 

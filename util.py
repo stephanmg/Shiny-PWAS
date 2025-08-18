@@ -3,6 +3,7 @@ from collections import defaultdict
 
 API = "https://exphewas.statgen.org/v1/api"
 
+
 def get_gene_associated_phenotypes(gene_name: str, analysis_subset: str = "BOTH"):
     """
     Returns a dict mapping analysis types to a list of (outcome_id, outcome_string).
@@ -22,9 +23,11 @@ def get_gene_associated_phenotypes(gene_name: str, analysis_subset: str = "BOTH"
         raise ValueError(f"Could not resolve Ensembl ID for '{gene_name}'")
 
     # 2) Fetch results for the gene
-    r = requests.get(f"{API}/gene/{ensg}/results",
-                     params={"analysis_subset": analysis_subset},
-                     timeout=60)
+    r = requests.get(
+        f"{API}/gene/{ensg}/results",
+        params={"analysis_subset": analysis_subset},
+        timeout=60,
+    )
     r.raise_for_status()
     data = r.json()
     # Some responses are wrapped under "results"
@@ -35,7 +38,9 @@ def get_gene_associated_phenotypes(gene_name: str, analysis_subset: str = "BOTH"
     # 3) Group into types
     grouped = defaultdict(list)
     for row in rows:
-        a_type = row.get("analysis_type")  # CONTINUOUS_VARIABLE, CV_ENDPOINTS, SELF_REPORTED, PHECODES
+        a_type = row.get(
+            "analysis_type"
+        )  # CONTINUOUS_VARIABLE, CV_ENDPOINTS, SELF_REPORTED, PHECODES
         oid = row.get("outcome_id")
         ostr = row.get("outcome_string") or row.get("description") or ""
         if a_type and oid:
@@ -43,6 +48,7 @@ def get_gene_associated_phenotypes(gene_name: str, analysis_subset: str = "BOTH"
 
     # Sort each list by outcome_id for stability
     return {k: sorted(v, key=lambda t: str(t[0])) for k, v in grouped.items()}
+
 
 if __name__ == "__main__":
     gene = "METTL2A"
