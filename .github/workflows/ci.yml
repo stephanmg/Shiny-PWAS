@@ -15,5 +15,5 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Ruff check
-        run: ruff . --output-format=github
+        run: ruff check . --output-format=github
 
