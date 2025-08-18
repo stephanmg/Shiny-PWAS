@@ -6,7 +6,9 @@
 
 ## About
 
-Shiny application for retrieving data for analyiss from the ExPheWAS browser via its REST API.
+Shiny application for retrieving data for analysis from the ExPheWAS browser via its REST API.
+
+Website: https://shiny.iaas.uni-bonn.de/Shiny-PWAS
 
 ## Installation
 
