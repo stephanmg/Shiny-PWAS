@@ -8,6 +8,7 @@ API = "https://exphewas.statgen.org/v1/api"
 CAT_KEEP = ["outcome_id", "description", "outcome_string", "name", "label", "phenotype"]
 
 def parse_gene_list(text: str) -> list[str]:
+    """ Parse a list of genes, either separated by comma or newline """
     if not text:
         return []
     return [p.strip() for p in text.replace(",", "\n").splitlines() if p.strip()]
@@ -67,6 +68,7 @@ def enrich_labels(df: pd.DataFrame) -> pd.DataFrame:
     return merged
 
 def tidy_table(df: pd.DataFrame) -> pd.DataFrame:
+    """ Format table """
     if df.empty:
         return pd.DataFrame(columns=["Gene","Outcome ID","Description","p","q"])
     m = enrich_labels(df.copy())
@@ -80,6 +82,7 @@ def tidy_table(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 def top_n_per_gene(df: pd.DataFrame, analysis_type: str, n: int) -> pd.DataFrame:
+    """ Top n samples / endpoints per gene """
     sub = df[df["analysis_type"] == analysis_type].copy()
     if sub.empty: return sub
     sort_cols = [c for c in ("q","p") if c in sub.columns]

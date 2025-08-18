@@ -45,6 +45,7 @@ def apply_scale(df: pd.DataFrame, use_log: bool, metric: str, eps: float=1e-300)
     return df
 
 def add_jitter(df: pd.DataFrame, seed: int=0, sd: float=0.045) -> pd.DataFrame:
+    """ Adds jitter to plot """
     if df.empty: return df
     rng = np.random.default_rng(seed)
     df["_xj"] = df["x"] + rng.normal(0, sd, size=len(df))

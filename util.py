@@ -44,11 +44,6 @@ def get_gene_associated_phenotypes(gene_name: str, analysis_subset: str = "BOTH"
     # Sort each list by outcome_id for stability
     return {k: sorted(v, key=lambda t: str(t[0])) for k, v in grouped.items()}
 
-# Example:
-# phenos = get_gene_associated_phenotypes("PCSK9")
-# print(phenos["CV_ENDPOINTS"][:5])
-
-
 if __name__ == "__main__":
     gene = "METTL2A"
     phenos = get_gene_associated_phenotypes(gene)

@@ -14,15 +14,19 @@ from plotting import KIND_ORDER, KIND_LABEL, prepare_plot_df, apply_scale, add_j
 app_ui = make_ui()
 
 def server(input, output, session):
+    """ Server """
     logs = reactive.Value("")
     df_results = reactive.Value(pd.DataFrame())
-    dl_msg = reactive.Value("Click 'Download CSV' to save the combined table with ALL rows.")
+    dl_msg = reactive.Value("Click 'Download CSV' to save the combined table with all rows.")
 
-    def log(msg): logs.set((logs.get() or "") + msg + "\n")
+    def log(msg): 
+        """ Log message to logging window """
+        logs.set((logs.get() or "") + msg + "\n")
 
     @reactive.Effect
     @reactive.event(input.btn_phenos)
     def load_phenos():
+        """ Load phenotypes for selected gene from database ExPheWAS """
         genes = parse_gene_list(input.genes() or "")
         subset = input.subset()
         if not genes:
@@ -51,6 +55,7 @@ def server(input, output, session):
     @reactive.Effect
     @reactive.event(input.btn_download_csv)
     def dl():
+        """ Download helper """
         df = df_results.get()
         if df is None or df.empty:
             dl_msg.set("No data to download."); return
