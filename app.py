@@ -15,9 +15,15 @@ from backend import (
 from plotting import KIND_LABEL, KIND_ORDER, add_jitter, apply_scale, prepare_plot_df
 from ui import make_ui
 
+###############################################################################
+# UI
+###############################################################################
 app_ui = make_ui()
 
 
+###############################################################################
+# Server / business logic
+###############################################################################
 def server(input, output, session):
     """Server"""
     logs = reactive.Value("")
@@ -26,10 +32,24 @@ def server(input, output, session):
         "Click 'Download CSV' to save the combined table with all rows."
     )
 
-    def log(msg):
+    ###########################################################################
+    # Utility / helper functions
+    ###########################################################################
+    def _tbl(kind: str):
+        """Tables: Get top N genes per endpoint"""
+        df = df_results.get()
+        if df is None or df.empty:
+            return tidy_table(pd.DataFrame())
+        sub = top_n_per_gene(df, kind, int(input.limit()))
+        return tidy_table(sub)
+
+    def _log(msg):
         """Log message to logging window"""
         logs.set((logs.get() or "") + msg + "\n")
 
+    ###########################################################################
+    # Effects and events
+    ###########################################################################
     @reactive.Effect
     @reactive.event(input.btn_phenos)
     def load_phenos():
@@ -37,14 +57,14 @@ def server(input, output, session):
         genes = parse_gene_list(input.genes() or "")
         subset = input.subset()
         if not genes:
-            log("Enter at least one gene (symbol or ENSG).")
+            _log("Enter at least one gene (symbol or ENSG).")
             df_results.set(pd.DataFrame())
             return
         frames = []
         for g in genes:
             ensg, sym = resolve_gene(g)
             if not ensg:
-                log(f"! Could not resolve '{g}' — skipping.")
+                _log(f"! Could not resolve '{g}' — skipping.")
                 continue
             try:
                 df = fetch_gene_results(ensg, subset)
@@ -52,18 +72,18 @@ def server(input, output, session):
                     df = df.copy()
                     df["gene"] = sym
                     frames.append(df)
-                    log(f"{sym}: {len(df)} rows.")
+                    _log(f"{sym}: {len(df)} rows.")
                 else:
-                    log(f"{sym}: 0 rows.")
+                    _log(f"{sym}: 0 rows.")
             except Exception as e:
-                log(f"{sym}: ERROR {e}")
+                _log(f"{sym}: ERROR {e}")
         if frames:
             all_df = pd.concat(frames, ignore_index=True)
             df_results.set(all_df)
-            log(f"Total rows combined: {len(all_df)}")
+            _log(f"Total rows combined: {len(all_df)}")
         else:
             df_results.set(pd.DataFrame())
-            log("No data loaded.")
+            _log("No data loaded.")
 
     @reactive.Effect
     @reactive.event(input.btn_download_csv)
@@ -78,15 +98,18 @@ def server(input, output, session):
         tidy.to_csv(path, index=False)
         dl_msg.set(f"Saved CSV to {path}")
 
+    @reactive.Effect
+    @reactive.event(input.btn_plot)
+    def log_plot():
+        _log("Plot requested.")
+
+    ###########################################################################
+    # Outputs
+    ###########################################################################
     @output
     @render.text
     def download_msg():
         return dl_msg.get()
-
-    @reactive.Effect
-    @reactive.event(input.btn_plot)
-    def log_plot():
-        log("Plot requested.")
 
     @output
     @render.plot
@@ -133,14 +156,6 @@ def server(input, output, session):
         fig.tight_layout()
         return fig
 
-    # tables: top N per gene, per endpoint
-    def _tbl(kind: str):
-        df = df_results.get()
-        if df is None or df.empty:
-            return tidy_table(pd.DataFrame())
-        sub = top_n_per_gene(df, kind, int(input.limit()))
-        return tidy_table(sub)
-
     @output
     @render.table
     def tbl_continuous():
@@ -167,4 +182,7 @@ def server(input, output, session):
         return logs.get() or "…"
 
 
+###############################################################################
+# Start application
+###############################################################################
 app = App(app_ui, server)
