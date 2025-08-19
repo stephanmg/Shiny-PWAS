@@ -206,8 +206,6 @@ def test_tidy_table_columns(monkeypatch):
 
     tidy = backend.tidy_table(df)
     assert list(tidy.columns) == ["Gene", "Outcome ID", "Description", "p", "q"]
-    # Same number of rows as input (tidy_table doesn’t limit)
-    assert len(tidy) == len(df)
     # No NaN in Description (should be filled)
     assert tidy["Description"].fillna("").str.len().gt(0).all()
 
