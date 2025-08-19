@@ -110,19 +110,13 @@ def make_ui():
                     "Volcano plot": "Volcano plot",
                     "Bar plot": "Bar plot",
                     "Heatmap": "Heatmap",
-                    "Single gene": "Single gene",
+                    "Bubble plot": "Bubble plot",
                 },
                 selected="Volcano plot",
             ),
             ui.panel_conditional(
-                "input.plot_type == 'Single gene'",  # show only if Single-cell plot is selected
-                ui.input_selectize(
-                    "single_gene",
-                    "Select one gene (for single-cell plot)",
-                    choices=["PCSK9"],  # will be updated dynamically
-                    multiple=False,
-                    selected="PCSK9",
-                ),
+                "input.plot_type == 'Bubble plot'",
+                ui.input_text_area("single_gene", "Single gene", value="PCSK9"),
                 ui.input_selectize(
                     "single_gene_category",
                     "Select category",

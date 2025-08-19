@@ -116,8 +116,6 @@ def server(input, output, session):
                 filters=None,
             )
         sub = top_n_per_gene(df, kind, int(input.limit()))
-        print("filters:")
-        print(filters)
         return tidy_table(
             sub,
             metric=input.metric(),
@@ -210,6 +208,27 @@ def server(input, output, session):
     @reactive.event(input.threshold)
     def log_threshold():
         _log(f"Threshold requested: {input.threshold()}")
+
+    @reactive.Effect
+    @reactive.event(input.genes, input.plot_type)
+    def sync_single_gene_select():
+        genes = parse_gene_list(input.genes() or "")
+        if not genes:
+            session.send_input_message("single_gene", {"choices": [], "selected": None})
+            return
+
+        # preserve selection if still valid; else pick the first
+        current = input.single_gene()
+        selected = current if current in genes else genes[0]
+
+        # For selectize, choices can be a simple list of strings
+        session.send_input_message(
+            "single_gene",
+            {
+                "choices": genes,
+                "selected": selected,  # must be a *string* when multiple=False
+            },
+        )
 
     ###########################################################################
     # Outputs
@@ -329,11 +348,9 @@ def server(input, output, session):
             return four_heatmaps(
                 d, input.metric(), bool(input.neglog10()), float(input.threshold())
             )
-        if str(input.plot_type()) == "Single gene":
+        if str(input.plot_type()) == "Bubble plot":
             gene = input.single_gene()
             category = input.single_gene_category()
-            print("category:")
-            print(category)
             d = get_single_gene_df(d, gene, category)
             if d.empty:
                 fig, ax = plt.subplots()
