@@ -82,8 +82,24 @@ def enrich_labels(df: pd.DataFrame) -> pd.DataFrame:
     return merged
 
 
+def filter_table(df: pd.DataFrame, filters: list):
+    if filters is None:
+        return df
+    if df is None or df.empty:
+        return df
+
+    mask = pd.Series(True, index=df.index)
+
+    mask &= df["Description"].isin(filters)
+
+    return df[mask].copy()
+
+
 def tidy_table(
-    df: pd.DataFrame, metric: str = "p", threshold: float = 0.05
+    df: pd.DataFrame,
+    metric: str = "p",
+    threshold: float = 0.05,
+    filters: list = (),
 ) -> pd.DataFrame:
     """Format table"""
     if df.empty:
@@ -103,6 +119,11 @@ def tidy_table(
 
     if metric in out.columns:
         out = out[out[metric] < threshold]
+
+    if len(filters) == 0:
+        return out
+    else:
+        out = filter_table(out, filters)
 
     return out
 

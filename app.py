@@ -6,6 +6,7 @@ from shiny import App, reactive, render
 
 from backend import (
     fetch_gene_results,
+    outcome_catalog,
     parse_gene_list,
     resolve_gene,
     tidy_table,
@@ -34,18 +35,26 @@ def server(input, output, session):
     ###########################################################################
     # Utility / helper functions
     ###########################################################################
-    def _tbl(kind: str):
+    def _tbl(kind: str, filters: list):
         """Tables: Get top N genes per endpoint"""
+        # Get full dataframe
         df = df_results.get()
+
         if df is None or df.empty:
             return tidy_table(
                 pd.DataFrame(),
                 metric=input.metric(),
                 threshold=float(input.threshold()),
+                filters=None,
             )
         sub = top_n_per_gene(df, kind, int(input.limit()))
+        print("filters:")
+        print(filters)
         return tidy_table(
-            sub, metric=input.metric(), threshold=float(input.threshold())
+            sub,
+            metric=input.metric(),
+            threshold=float(input.threshold()),
+            filters=filters,
         )
 
     def _log(msg):
@@ -56,6 +65,11 @@ def server(input, output, session):
         if str(input.metric()) in df.columns:
             df = df[df[str(input.metric())] < float(input.threshold())]
         return df
+
+    def _filter_for_phenotypes_by_category(df: pd.DataFrame):
+        mask = pd.Series(True, index=df.index)
+        mask &= df["Description"].isin(input.filter_cont())
+        return mask
 
     ###########################################################################
     # Effects and events
@@ -131,6 +145,7 @@ def server(input, output, session):
     def plot_out():
         df = df_results.get()
         df = _filter_for_p_or_q_value(df)
+
         if df is None or df.empty:
             fig, ax = plt.subplots()
             ax.text(
@@ -142,10 +157,11 @@ def server(input, output, session):
             )
             ax.set_axis_off()
             return fig
+
         metric = input.metric()
         use_log = bool(input.neglog10())
         limit = max(1, int(input.limit()))
-        d = prepare_plot_df(df, metric, limit)
+        d = prepare_plot_df(df, metric, limit, outcome_catalog())
         if d.empty:
             fig, ax = plt.subplots()
             ax.text(0.5, 0.5, "No rows to plot.", ha="center", va="center")
@@ -175,22 +191,22 @@ def server(input, output, session):
     @output
     @render.table
     def tbl_continuous():
-        return _tbl("CONTINUOUS_VARIABLE")
+        return _tbl("CONTINUOUS_VARIABLE", input.filter_cont())
 
     @output
     @render.table
     def tbl_cv():
-        return _tbl("CV_ENDPOINTS")
+        return _tbl("CV_ENDPOINTS", input.filter_cv())
 
     @output
     @render.table
     def tbl_self():
-        return _tbl("SELF_REPORTED")
+        return _tbl("SELF_REPORTED", input.filter_self())
 
     @output
     @render.table
     def tbl_phecode():
-        return _tbl("PHECODES")
+        return _tbl("PHECODES", input.filter_phe())
 
     @output
     @render.text

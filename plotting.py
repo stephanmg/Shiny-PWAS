@@ -10,7 +10,9 @@ KIND_LABEL = {
 }
 
 
-def prepare_plot_df(df: pd.DataFrame, metric: str, limit: int) -> pd.DataFrame:
+def prepare_plot_df(
+    df: pd.DataFrame, metric: str, limit: int, catalog: pd.DataFrame
+) -> pd.DataFrame:
     """Return filtered/limited df with columns: analysis_type, gene, x, _xj, _y"""
     if df.empty or "analysis_type" not in df.columns:
         return pd.DataFrame()
@@ -27,6 +29,7 @@ def prepare_plot_df(df: pd.DataFrame, metric: str, limit: int) -> pd.DataFrame:
     # take top N per (gene, analysis_type)
     d = d.groupby(["gene", "analysis_type"], group_keys=False).head(max(1, int(limit)))
     d = d[d["analysis_type"].isin(KIND_ORDER)].copy()
+
     if d.empty:
         return d
 
@@ -36,6 +39,7 @@ def prepare_plot_df(df: pd.DataFrame, metric: str, limit: int) -> pd.DataFrame:
 
     # safe values with epsilon for zeros when using -log10 in the app
     d["_vals"] = d[metric].astype(float).to_numpy()
+
     return d
 
 

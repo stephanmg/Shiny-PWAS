@@ -14,6 +14,67 @@ def make_ui():
                 width="100%",
                 height="120px",
             ),
+            ui.card(
+                ui.card_header("Filter phenotypes by category"),
+                ui.navset_pill(
+                    ui.nav_panel(
+                        "Continuous variables",
+                        ui.input_selectize(
+                            "filter_cont",
+                            "Select continuous variables",
+                            choices=[],
+                            multiple=True,
+                            options={
+                                "create": True,
+                                "persist": False,
+                                "placeholder": "Type to search…",
+                            },
+                        ),
+                    ),
+                    ui.nav_panel(
+                        "Cardiovascular endpoints",
+                        ui.input_selectize(
+                            "filter_cv",
+                            "Select cardiovascular endpoints",
+                            choices=[],
+                            multiple=True,
+                            options={
+                                "create": True,
+                                "persist": False,
+                                "placeholder": "Type to search…",
+                            },
+                        ),
+                    ),
+                    ui.nav_panel(
+                        "Self reported",
+                        ui.input_selectize(
+                            "filter_self",
+                            "Select self reported phenotypes",
+                            choices=[],
+                            multiple=True,
+                            options={
+                                "create": True,
+                                "persist": False,
+                                "placeholder": "Type to search…",
+                            },
+                        ),
+                    ),
+                    ui.nav_panel(
+                        "Phecodes",
+                        ui.input_selectize(
+                            "filter_phe",
+                            "Select phecodes",
+                            choices=[],
+                            multiple=True,
+                            options={
+                                "create": True,
+                                "persist": False,
+                                "placeholder": "Type to search…",
+                            },
+                        ),
+                    ),
+                ),
+            ),
             ui.input_radio_buttons(
                 "subset",
                 "Subset selection",
