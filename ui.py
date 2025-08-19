@@ -98,7 +98,12 @@ def make_ui():
             ui.input_select(
                 "threshold",
                 "Threshold",
-                choices={"0.05": "0.05", "0.01": "0.01", "0.001": "0.001"},
+                choices={
+                    "1.00": "1.00",
+                    "0.05": "0.05",
+                    "0.01": "0.01",
+                    "0.001": "0.001",
+                },
                 selected="0.05",
             ),
             ui.input_checkbox("neglog10", "Use −log10 scale", value=True),
