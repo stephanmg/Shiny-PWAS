@@ -103,6 +103,16 @@ def make_ui():
             ),
             ui.input_checkbox("neglog10", "Use −log10 scale", value=True),
             ui.input_checkbox("show_legend", "Show legend", value=True),
+            ui.input_radio_buttons(
+                "plot_type",
+                "Visualization type",
+                choices={
+                    "Volcano plot": "Volcano plot",
+                    "Bar plot": "Bar plot",
+                    "Heatmap": "Heatmap",
+                },
+                selected="Volcano plot",
+            ),
             ui.input_action_button("btn_plot", "Load plot"),
             width=340,
         ),

@@ -1,6 +1,7 @@
 import math
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from shiny import App, reactive, render
 
@@ -19,6 +20,72 @@ from ui import make_ui
 # UI
 ###############################################################################
 app_ui = make_ui()
+
+
+def four_heatmaps(df, metric="p", use_log=True, pthresh=None):
+    """
+    Make 4 heatmaps (2x2), one per analysis_type.
+    df must have columns: gene, analysis_type, Description, and the metric (p or q).
+    """
+    if df is None or df.empty:
+        fig, ax = plt.subplots()
+        ax.text(0.5, 0.5, "No data", ha="center", va="center")
+        ax.set_axis_off()
+        return fig
+
+    d = df.copy()
+    # filter threshold if given
+    if pthresh is not None and metric in d.columns:
+        d = d[d[metric] <= pthresh]
+
+    if d.empty:
+        fig, ax = plt.subplots()
+        ax.text(0.5, 0.5, "No rows after filtering", ha="center", va="center")
+        ax.set_axis_off()
+        return fig
+
+    # transform metric
+    vals = d[metric].astype(float).to_numpy()
+    vals = np.clip(vals, 1e-300, 1.0)  # avoid log10(0)
+    d["_val"] = -np.log10(vals) if use_log else vals
+
+    # draw grid
+    fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+    axes = axes.ravel()
+
+    vmin, vmax = d["_val"].min(), d["_val"].max()
+
+    for ax, kind in zip(axes, KIND_ORDER):
+        sub = d[d["analysis_type"] == kind]
+        if sub.empty:
+            ax.text(
+                0.5, 0.5, f"No data for\n{KIND_LABEL[kind]}", ha="center", va="center"
+            )
+            ax.set_axis_off()
+            continue
+
+        # pivot: rows=Description, cols=genes
+        mat = sub.pivot(index="Description", columns="gene", values="_val").fillna(0)
+
+        im = ax.imshow(
+            mat.values,
+            aspect="auto",
+            interpolation="nearest",
+            vmin=vmin,
+            vmax=vmax,
+            cmap="viridis",
+        )
+
+        ax.set_title(KIND_LABEL[kind])
+        ax.set_xticks(range(len(mat.columns)))
+        ax.set_xticklabels(mat.columns, rotation=45, ha="right")
+        ax.set_yticks(range(len(mat.index)))
+        ax.set_yticklabels(mat.index, fontsize=6)
+
+        cbar = fig.colorbar(im, ax=ax, shrink=0.7)
+        cbar.set_label(f"-log10({metric})" if use_log else metric)
+
+    return fig
 
 
 ###############################################################################
@@ -75,7 +142,7 @@ def server(input, output, session):
     # Effects and events
     ###########################################################################
     @reactive.Effect
-    @reactive.event(input.btn_phenos)
+    @reactive.event(input.btn_phenos, input.genes)
     def load_phenos():
         """Load phenotypes for selected gene from database ExPheWAS"""
         genes = parse_gene_list(input.genes() or "")
@@ -179,31 +246,77 @@ def server(input, output, session):
                 "filter_phe": input.filter_phe(),
             }
             d = prepare_plot_df(df, metric, limit, outcome_catalog(), filters)
-        if d.empty:
+
+        if d.empty or input.plot_type() is None:
             fig, ax = plt.subplots()
             ax.text(0.5, 0.5, "No rows to plot.", ha="center", va="center")
             ax.set_axis_off()
             return fig
+
+        # prepare plot
         d = apply_scale(d, use_log, metric, eps=1e-300)
         d = add_jitter(d, seed=0, sd=0.045)
 
-        # draw
-        fig, ax = plt.subplots(figsize=(7.2, 3.8))
-        for gname, gdf in d.groupby("gene", sort=True):
-            ax.scatter(gdf["_xj"], gdf["_y"], s=20, alpha=0.8, label=gname)
+        if str(input.plot_type()) == "Volcano plot":
+            # draw
+            fig, ax = plt.subplots(figsize=(7.2, 3.8))
+            for gname, gdf in d.groupby("gene", sort=True):
+                ax.scatter(gdf["_xj"], gdf["_y"], s=20, alpha=0.8, label=gname)
 
-        thresh_y = -math.log10(0.05) if use_log else 0.05
-        ax.axhline(thresh_y, linestyle=":", linewidth=1)
-        ax.set_xticks(range(len(KIND_ORDER)))
-        ax.set_xticklabels([KIND_LABEL[k] for k in KIND_ORDER])
-        ax.set_ylabel(f"−log10({metric})" if use_log else metric)
-        ax.set_title(
-            f"{'−log10('+metric+')' if use_log else metric} by analysis type (top {limit}/gene/group)"
-        )
-        if input.show_legend():
-            ax.legend(title="Gene", loc="upper right", frameon=True, fontsize="small")
-        fig.tight_layout()
-        return fig
+            thresh_y = -math.log10(0.05) if use_log else 0.05
+            ax.axhline(thresh_y, linestyle=":", linewidth=1)
+            ax.set_xticks(range(len(KIND_ORDER)))
+            ax.set_xticklabels([KIND_LABEL[k] for k in KIND_ORDER])
+            ax.set_ylabel(f"−log10({metric})" if use_log else metric)
+            ax.set_title(
+                f"{'−log10('+metric+')' if use_log else metric} by analysis type (top {limit}/gene/group)"
+            )
+            if input.show_legend():
+                ax.legend(
+                    title="Gene", loc="upper right", frameon=True, fontsize="small"
+                )
+            fig.tight_layout()
+            return fig
+
+        if str(input.plot_type()) == "Bar plot":
+            # Ensure categories are consistent
+            order = ["CONTINUOUS_VARIABLE", "CV_ENDPOINTS", "SELF_REPORTED", "PHECODES"]
+            labels = {
+                "CONTINUOUS_VARIABLE": "Continuous",
+                "CV_ENDPOINTS": "CV endpoints",
+                "SELF_REPORTED": "Self reported",
+                "PHECODES": "Phecodes",
+            }
+
+            # Count rows per (gene, analysis_type)
+            counts = (
+                d.groupby(["gene", "analysis_type"]).size().reset_index(name="count")
+            )
+
+            genes = sorted(d["gene"].unique())
+            x = np.arange(len(genes))
+            width = 0.2
+
+            fig, ax = plt.subplots(figsize=(8, 4.5))
+
+            for i, kind in enumerate(order):
+                subset = counts[counts["analysis_type"] == kind]
+                # Align with all genes (fill missing with 0)
+                y = [subset.loc[subset["gene"] == g, "count"].sum() for g in genes]
+                ax.bar(x + i * width, y, width, label=labels[kind])
+
+            ax.set_xticks(x + width * (len(order) - 1) / 2)
+            ax.set_xticklabels(genes, rotation=45, ha="right")
+            ax.set_ylabel("Number of outcomes")
+            ax.set_title("Counts per gene by analysis type")
+            ax.legend(title="Category")
+            fig.tight_layout()
+            return fig
+
+        if str(input.plot_type()) == "Heatmap":
+            return four_heatmaps(
+                d, input.metric(), bool(input.neglog10()), float(input.threshold())
+            )
 
     @output
     @render.table

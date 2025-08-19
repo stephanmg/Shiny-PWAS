@@ -4,13 +4,13 @@ import pandas as pd
 from backend import outcome_catalog
 
 KIND_ORDER = ["CONTINUOUS_VARIABLE", "CV_ENDPOINTS", "SELF_REPORTED", "PHECODES"]
+
 KIND_LABEL = {
     "CONTINUOUS_VARIABLE": "Continuous variables",
     "CV_ENDPOINTS": "Cardiovascular endpoints",
     "SELF_REPORTED": "Self reported",
     "PHECODES": "Phecodes",
 }
-
 
 FILTER_MAP = {
     "filter_cont": "CONTINUOUS_VARIABLE",
