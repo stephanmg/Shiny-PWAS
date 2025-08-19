@@ -82,7 +82,9 @@ def enrich_labels(df: pd.DataFrame) -> pd.DataFrame:
     return merged
 
 
-def tidy_table(df: pd.DataFrame) -> pd.DataFrame:
+def tidy_table(
+    df: pd.DataFrame, metric: str = "p", threshold: float = 0.05
+) -> pd.DataFrame:
     """Format table"""
     if df.empty:
         return pd.DataFrame(columns=["Gene", "Outcome ID", "Description", "p", "q"])
@@ -98,6 +100,10 @@ def tidy_table(df: pd.DataFrame) -> pd.DataFrame:
         out["p"] = m["p"]
     if "q" in m.columns:
         out["q"] = m["q"]
+
+    if metric in out.columns:
+        out = out[out[metric] < threshold]
+
     return out
 
 

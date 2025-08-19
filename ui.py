@@ -25,7 +25,7 @@ def make_ui():
                 selected="BOTH",
             ),
             ui.input_numeric(
-                "limit", "Max rows per gene per group", value=10, min=1, step=1
+                "limit", "Max rows per gene per group", value=1e6, min=1, step=1
             ),
             ui.input_action_button("btn_phenos", "Load phenotypes"),
             ui.input_select(
@@ -33,6 +33,12 @@ def make_ui():
                 "Value to plot",
                 choices={"p": "p-value", "q": "q-value (FDR)"},
                 selected="p",
+            ),
+            ui.input_select(
+                "threshold",
+                "Threshold",
+                choices={"0.05": "0.05", "0.01": "0.01", "0.001": "0.001"},
+                selected="0.05",
             ),
             ui.input_checkbox("neglog10", "Use −log10 scale", value=True),
             ui.input_checkbox("show_legend", "Show legend", value=True),

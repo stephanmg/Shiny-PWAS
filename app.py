@@ -38,13 +38,24 @@ def server(input, output, session):
         """Tables: Get top N genes per endpoint"""
         df = df_results.get()
         if df is None or df.empty:
-            return tidy_table(pd.DataFrame())
+            return tidy_table(
+                pd.DataFrame(),
+                metric=input.metric(),
+                threshold=float(input.threshold()),
+            )
         sub = top_n_per_gene(df, kind, int(input.limit()))
-        return tidy_table(sub)
+        return tidy_table(
+            sub, metric=input.metric(), threshold=float(input.threshold())
+        )
 
     def _log(msg):
         """Log message to logging window"""
         logs.set((logs.get() or "") + msg + "\n")
+
+    def _filter_for_p_or_q_value(df: pd.DataFrame):
+        if str(input.metric()) in df.columns:
+            df = df[df[str(input.metric())] < float(input.threshold())]
+        return df
 
     ###########################################################################
     # Effects and events
@@ -102,6 +113,11 @@ def server(input, output, session):
     def log_plot():
         _log("Plot requested.")
 
+    @reactive.Effect
+    @reactive.event(input.threshold)
+    def log_threshold():
+        _log(f"Threshold requested: {input.threshold()}")
+
     ###########################################################################
     # Outputs
     ###########################################################################
@@ -114,6 +130,7 @@ def server(input, output, session):
     @render.plot
     def plot_out():
         df = df_results.get()
+        df = _filter_for_p_or_q_value(df)
         if df is None or df.empty:
             fig, ax = plt.subplots()
             ax.text(
