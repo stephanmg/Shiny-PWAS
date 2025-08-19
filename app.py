@@ -161,7 +161,24 @@ def server(input, output, session):
         metric = input.metric()
         use_log = bool(input.neglog10())
         limit = max(1, int(input.limit()))
-        d = prepare_plot_df(df, metric, limit, outcome_catalog())
+        if (
+            len(
+                input.filter_cont()
+                + input.filter_cv()
+                + input.filter_self()
+                + input.filter_phe()
+            )
+            == 0
+        ):
+            d = prepare_plot_df(df, metric, limit, outcome_catalog(), None)
+        else:
+            filters = {
+                "filter_cont": input.filter_cont(),
+                "filter_cv": input.filter_cv(),
+                "filter_self": input.filter_self(),
+                "filter_phe": input.filter_phe(),
+            }
+            d = prepare_plot_df(df, metric, limit, outcome_catalog(), filters)
         if d.empty:
             fig, ax = plt.subplots()
             ax.text(0.5, 0.5, "No rows to plot.", ha="center", va="center")
