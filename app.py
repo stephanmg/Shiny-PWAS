@@ -7,6 +7,7 @@ from shiny import App, reactive, render
 
 from backend import (
     fetch_gene_results,
+    get_single_gene_df,
     outcome_catalog,
     parse_gene_list,
     resolve_gene,
@@ -141,6 +142,17 @@ def server(input, output, session):
     ###########################################################################
     # Effects and events
     ###########################################################################
+    @reactive.Effect
+    @reactive.event(input.genes)
+    def update_single_gene_choices():
+        genes = parse_gene_list(input.genes() or "")
+        if not genes:
+            session.send_input_message("single_gene", {"choices": []})
+        else:
+            session.send_input_message(
+                "single_gene", {"choices": [{"label": g, "value": g} for g in genes]}
+            )
+
     @reactive.Effect
     @reactive.event(input.btn_phenos, input.genes)
     def load_phenos():
@@ -317,6 +329,64 @@ def server(input, output, session):
             return four_heatmaps(
                 d, input.metric(), bool(input.neglog10()), float(input.threshold())
             )
+        if str(input.plot_type()) == "Single gene":
+            gene = input.single_gene()
+            category = input.single_gene_category()
+            print("category:")
+            print(category)
+            d = get_single_gene_df(d, gene, category)
+            if d.empty:
+                fig, ax = plt.subplots()
+                ax.text(0.5, 0.5, "No rows for single gene.", ha="center", va="center")
+                ax.set_axis_off()
+                return fig
+
+            sizes = d["n_cases"] / d["n_cases"].max() * 800  # adjust scaling factor
+
+            metric = input.metric()
+            if metric not in d.columns:
+                metric = "p"  # fallback
+            vals = d[metric].replace(0, 1e-300)  # avoid log(0)
+
+            # Use -log10 for better spread
+            colors = -np.log10(vals)
+
+            fig, ax = plt.subplots(figsize=(10, 5))
+            sc = ax.scatter(
+                d["n_controls"],
+                d["Description"],
+                s=sizes,
+                c=colors,
+                cmap="viridis_r",
+                alpha=0.8,
+                edgecolor="k",
+            )
+
+            ax.set_xlabel("Number of controls")
+            ax.set_ylabel("Phenotype (Description)")
+            ax.set_title(f"Bubble plot for {gene} (colored by −log10({metric}))")
+            ax.grid(True, linestyle="--", alpha=0.5)
+            ax.tick_params(axis="y", labelsize=8)
+
+            # Colorbar for metric
+            cbar = fig.colorbar(sc, ax=ax, shrink=0.8)
+            cbar.set_label(f"−log10({metric})")
+
+            # Legend for bubble sizes
+            for size in [d["n_cases"].min(), d["n_cases"].median(), d["n_cases"].max()]:
+                ax.scatter(
+                    [],
+                    [],
+                    s=size / d["n_cases"].max() * 800,
+                    c="gray",
+                    alpha=0.5,
+                    edgecolor="k",
+                    label=f"{int(size)} cases",
+                )
+            ax.legend(scatterpoints=1, frameon=True, labelspacing=1, title="n_cases")
+
+            fig.tight_layout()
+            return fig
 
     @output
     @render.table

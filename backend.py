@@ -138,3 +138,15 @@ def top_n_per_gene(df: pd.DataFrame, analysis_type: str, n: int) -> pd.DataFrame
     if "gene" not in sub.columns:
         sub["gene"] = "unknown"
     return sub.groupby("gene", group_keys=False).head(max(1, int(n)))
+
+
+def get_single_gene_df(df: pd.DataFrame, gname: str, category: str) -> pd.DataFrame:
+    """Return subset of df for a single gene chosen from the input list."""
+    if df.empty or not gname:
+        return pd.DataFrame()
+
+    print(df["analysis_type"])
+    df = df[df["analysis_type"] == category]
+    print(df)
+
+    return df[df["gene"] == gname].copy()

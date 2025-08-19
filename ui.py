@@ -110,8 +110,24 @@ def make_ui():
                     "Volcano plot": "Volcano plot",
                     "Bar plot": "Bar plot",
                     "Heatmap": "Heatmap",
+                    "Single gene": "Single gene",
                 },
                 selected="Volcano plot",
+            ),
+            ui.panel_conditional(
+                "input.plot_type == 'Single gene'",  # show only if Single-cell plot is selected
+                ui.input_selectize(
+                    "single_gene",
+                    "Select one gene (for single-cell plot)",
+                    choices=["PCSK9"],  # will be updated dynamically
+                    multiple=False,
+                    selected="PCSK9",
+                ),
+                ui.input_selectize(
+                    "single_gene_category",
+                    "Select category",
+                    choices=["CV_ENDPOINTS", "SELF_REPORTED", "PHECODES"],
+                ),
             ),
             ui.input_action_button("btn_plot", "Load plot"),
             width=340,
