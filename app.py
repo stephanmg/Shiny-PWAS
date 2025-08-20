@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from shiny import App, reactive, render
+from shinywidgets import render_plotly
 
 from backend import (
     fetch_gene_results,
@@ -209,23 +210,26 @@ def server(input, output, session):
     def download_msg():
         return dl_msg.get()
 
-    @output
-    @render.plot
+    @render_plotly
     def plot_out():
         df = df_results.get()
         df = _filter_for_p_or_q_value(df)
 
         if df is None or df.empty:
-            fig, ax = plt.subplots()
-            ax.text(
-                0.5,
-                0.5,
-                "No data yet. Click 'Load phenotypes'.",
-                ha="center",
-                va="center",
+            import plotly.graph_objects as go
+
+            return go.Figure().add_annotation(
+                text="No data yet. Click 'Load phenotypes'.",
+                showarrow=False,
+                x=0.5,
+                y=0.5,
             )
-            ax.set_axis_off()
-            return fig
+
+        import plotly.graph_objects as go
+
+        return go.Figure().add_annotation(
+            text="No data yet. Click 'Load phenotypes'.", showarrow=False, x=0.5, y=0.5
+        )
 
         metric = input.metric()
         use_log = bool(input.neglog10())

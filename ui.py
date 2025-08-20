@@ -1,4 +1,5 @@
 from shiny import ui
+from shinywidgets import output_widget
 
 from backend import (
     get_continuous_labels,
@@ -149,7 +150,8 @@ def make_ui():
             {"class": "content-wrapper"},
             ui.card(
                 ui.card_header("Plot of selected metric by analysis type"),
-                ui.output_plot("plot_out", height="380px"),
+                output_widget("plot_out", height="380px"),
+                # ui.output_plot("plot_out", height="380px"),
             ),
             ui.card(
                 ui.card_header("Phenotypes (top N genes)"),
