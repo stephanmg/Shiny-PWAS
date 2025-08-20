@@ -68,6 +68,10 @@ def four_heatmaps(df, metric="p", use_log=True, pthresh=None):
         # pivot: rows=Description, cols=genes
         mat = sub.pivot(index="Description", columns="gene", values="_val").fillna(0)
 
+        # set bad color to magenta (missing)
+        cmap = plt.cm.viridis.copy()
+        cmap.set_bad(color="magenta")
+
         im = ax.imshow(
             mat.values,
             aspect="auto",
