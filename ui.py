@@ -1,5 +1,12 @@
 from shiny import ui
 
+from backend import (
+    get_continuous_descriptions,
+    get_cv_descriptions,
+    get_phecode_descriptions,
+    get_self_reported_descriptions,
+)
+
 
 def make_ui():
     return ui.page_sidebar(
@@ -22,7 +29,7 @@ def make_ui():
                         ui.input_selectize(
                             "filter_cont",
                             "Select continuous variables",
-                            choices=[],
+                            choices=get_continuous_descriptions(),
                             multiple=True,
                             options={
                                 "create": True,
@@ -36,7 +43,7 @@ def make_ui():
                         ui.input_selectize(
                             "filter_cv",
                             "Select cardiovascular endpoints",
-                            choices=[],
+                            choices=get_cv_descriptions(),
                             multiple=True,
                             options={
                                 "create": True,
@@ -50,7 +57,7 @@ def make_ui():
                         ui.input_selectize(
                             "filter_self",
                             "Select self reported phenotypes",
-                            choices=[],
+                            choices=get_self_reported_descriptions(),
                             multiple=True,
                             options={
                                 "create": True,
@@ -64,7 +71,7 @@ def make_ui():
                         ui.input_selectize(
                             "filter_phe",
                             "Select phecodes",
-                            choices=[],
+                            choices=get_phecode_descriptions(),
                             multiple=True,
                             options={
                                 "create": True,

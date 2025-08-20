@@ -154,3 +154,38 @@ def get_single_gene_df(df: pd.DataFrame, gname: str, category: str) -> pd.DataFr
     print(df)
 
     return df[df["gene"] == gname].copy()
+
+
+###############################################################################
+# CATALOG DATA
+###############################################################################
+KIND_CONT = "CONTINUOUS_VARIABLES"
+KIND_CV = "CV_ENDPOINTS"
+KIND_SELF = "SELF_REPORTED"
+KIND_PHE = "PHECODES"
+PATH_TO_CATALOG = "catalog/"
+
+
+def _descriptions_for_kind(kind: str) -> list[str]:
+    return (
+        pd.read_excel(f"{PATH_TO_CATALOG}/{kind}.xlsx")["Description"]
+        .dropna()
+        .astype(str)
+        .tolist()
+    )
+
+
+def get_continuous_descriptions() -> list[str]:
+    return _descriptions_for_kind(KIND_CONT)
+
+
+def get_cv_descriptions() -> list[str]:
+    return _descriptions_for_kind(KIND_CV)
+
+
+def get_self_reported_descriptions() -> list[str]:
+    return _descriptions_for_kind(KIND_SELF)
+
+
+def get_phecode_descriptions() -> list[str]:
+    return _descriptions_for_kind(KIND_PHE)
