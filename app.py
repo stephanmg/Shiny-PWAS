@@ -165,7 +165,7 @@ def server(input, output, session):
         for g in genes:
             ensg, sym = resolve_gene(g)
             if not ensg:
-                _log(f"! Could not resolve '{g}' — skipping.")
+                _log(f"! Could not find gene with symbol '{g}' — skipping.")
                 continue
             try:
                 df = fetch_gene_results(ensg, subset)
@@ -175,7 +175,7 @@ def server(input, output, session):
                     frames.append(df)
                     _log(f"{sym}: {len(df)} rows.")
                 else:
-                    _log(f"{sym}: 0 rows.")
+                    _log(f"No results found for gene symbol {sym}.")
             except Exception as e:
                 _log(f"{sym}: ERROR {e}")
         if frames:

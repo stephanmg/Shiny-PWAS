@@ -8,10 +8,14 @@ CAT_KEEP = ["outcome_id", "description", "outcome_string", "name", "label", "phe
 
 
 def parse_gene_list(text: str) -> list[str]:
-    """Parse a list of genes, either separated by comma or newline"""
+    """Parse a list of genes, either separated by comma or newline
+    Return: Gene symbol in upper case compatible for ExPheWas REST API
+    """
     if not text:
         return []
-    return [p.strip() for p in text.replace(",", "\n").splitlines() if p.strip()]
+    return [
+        p.strip().upper() for p in text.replace(",", "\n").splitlines() if p.strip()
+    ]
 
 
 def resolve_gene(name: str) -> tuple[str | None, str | None]:
