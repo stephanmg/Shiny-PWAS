@@ -1,10 +1,10 @@
 from shiny import ui
 
 from backend import (
-    get_continuous_descriptions,
-    get_cv_descriptions,
-    get_phecode_descriptions,
-    get_self_reported_descriptions,
+    get_continuous_labels,
+    get_cv_labels,
+    get_phecode_labels,
+    get_self_reported_labels,
 )
 
 
@@ -29,7 +29,7 @@ def make_ui():
                         ui.input_selectize(
                             "filter_cont",
                             "Select continuous variables",
-                            choices=get_continuous_descriptions(),
+                            choices=get_continuous_labels(),
                             multiple=True,
                             options={
                                 "create": True,
@@ -43,7 +43,7 @@ def make_ui():
                         ui.input_selectize(
                             "filter_cv",
                             "Select cardiovascular endpoints",
-                            choices=get_cv_descriptions(),
+                            choices=get_cv_labels(),
                             multiple=True,
                             options={
                                 "create": True,
@@ -57,7 +57,7 @@ def make_ui():
                         ui.input_selectize(
                             "filter_self",
                             "Select self reported phenotypes",
-                            choices=get_self_reported_descriptions(),
+                            choices=get_self_reported_labels(),
                             multiple=True,
                             options={
                                 "create": True,
@@ -71,7 +71,7 @@ def make_ui():
                         ui.input_selectize(
                             "filter_phe",
                             "Select phecodes",
-                            choices=get_phecode_descriptions(),
+                            choices=get_phecode_labels(),
                             multiple=True,
                             options={
                                 "create": True,

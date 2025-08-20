@@ -159,33 +159,86 @@ def get_single_gene_df(df: pd.DataFrame, gname: str, category: str) -> pd.DataFr
 ###############################################################################
 # CATALOG DATA
 ###############################################################################
-KIND_CONT = "CONTINUOUS_VARIABLES"
+KIND_CONT = "CONTINUOUS_VARIABLE"
 KIND_CV = "CV_ENDPOINTS"
 KIND_SELF = "SELF_REPORTED"
 KIND_PHE = "PHECODES"
 PATH_TO_CATALOG = "catalog/"
 
+VALID_KINDS = {KIND_CONT, KIND_CV, KIND_SELF, KIND_PHE}
 
-def _descriptions_for_kind(kind: str) -> list[str]:
+
+def _fetch_outcomes() -> pd.DataFrame:
+    """Fetch the full outcomes catalog once."""
+    r = requests.get(f"{API}/outcome", timeout=60)
+    r.raise_for_status()
+    return pd.DataFrame(r.json())
+
+
+def _pick_label_column(df: pd.DataFrame) -> str:
+    """
+    Pick the best available human-readable label column.
+    ExPheWAS often uses 'label'; some rows may have 'description'/'name'/'outcome_string'.
+    """
+    for col in ("label", "description", "name", "outcome_string"):
+        if col in df.columns:
+            return col
+    # Fallback to 'id' if nothing else exists
+    return "id"
+
+
+def get_label_list(kind: str) -> list[str]:
+    """
+    Return a list of unique labels (Descriptions) for the requested analysis_type.
+      kind ∈ {CONTINUOUS_VARIABLE, CV_ENDPOINTS, SELF_REPORTED, PHECODES}
+    """
+    if kind not in VALID_KINDS:
+        raise ValueError(
+            f"Unknown kind '{kind}'. Expected one of: {sorted(VALID_KINDS)}"
+        )
+
+    cat = _fetch_outcomes()
+    if "analysis_type" not in cat.columns:
+        return []
+
+    sub = cat[cat["analysis_type"] == kind].copy()
+    if sub.empty:
+        return []
+
+    label_col = _pick_label_column(sub)
     return (
-        pd.read_excel(f"{PATH_TO_CATALOG}/{kind}.xlsx")["Description"]
+        sub[label_col]
         .dropna()
         .astype(str)
+        .str.strip()
+        .replace({"": pd.NA})
+        .dropna()
+        .drop_duplicates()
+        .sort_values(key=lambda s: s.str.lower())
         .tolist()
     )
 
 
-def get_continuous_descriptions() -> list[str]:
-    return _descriptions_for_kind(KIND_CONT)
+def get_continuous_labels() -> list[str]:
+    return get_label_list(KIND_CONT)
 
 
-def get_cv_descriptions() -> list[str]:
-    return _descriptions_for_kind(KIND_CV)
+def get_cv_labels() -> list[str]:
+    return get_label_list(KIND_CV)
 
 
-def get_self_reported_descriptions() -> list[str]:
-    return _descriptions_for_kind(KIND_SELF)
+def get_self_reported_labels() -> list[str]:
+    return get_label_list(KIND_SELF)
 
 
-def get_phecode_descriptions() -> list[str]:
-    return _descriptions_for_kind(KIND_PHE)
+def get_phecode_labels() -> list[str]:
+    return get_label_list(KIND_PHE)
+
+
+def get_all_label_lists() -> dict[str, list[str]]:
+    return {
+        KIND_CONT: get_continuous_labels(),
+        KIND_CV: get_cv_labels(),
+        KIND_SELF: get_self_reported_labels(),
+        KIND_PHE: get_phecode_labels(),
+    }
