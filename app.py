@@ -145,17 +145,6 @@ def server(input, output, session):
     # Effects and events
     ###########################################################################
     @reactive.Effect
-    @reactive.event(input.genes)
-    def update_single_gene_choices():
-        genes = parse_gene_list(input.genes() or "")
-        if not genes:
-            session.send_input_message("single_gene", {"choices": []})
-        else:
-            session.send_input_message(
-                "single_gene", {"choices": [{"label": g, "value": g} for g in genes]}
-            )
-
-    @reactive.Effect
     @reactive.event(input.btn_phenos, input.genes)
     def load_phenos():
         """Load phenotypes for selected gene from database ExPheWAS"""
@@ -211,27 +200,6 @@ def server(input, output, session):
     @reactive.event(input.threshold)
     def log_threshold():
         _log(f"Threshold requested: {input.threshold()}")
-
-    @reactive.Effect
-    @reactive.event(input.genes, input.plot_type)
-    def sync_single_gene_select():
-        genes = parse_gene_list(input.genes() or "")
-        if not genes:
-            session.send_input_message("single_gene", {"choices": [], "selected": None})
-            return
-
-        # preserve selection if still valid; else pick the first
-        current = input.single_gene()
-        selected = current if current in genes else genes[0]
-
-        # For selectize, choices can be a simple list of strings
-        session.send_input_message(
-            "single_gene",
-            {
-                "choices": genes,
-                "selected": selected,  # must be a *string* when multiple=False
-            },
-        )
 
     ###########################################################################
     # Outputs
