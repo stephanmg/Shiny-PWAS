@@ -154,7 +154,7 @@ def make_ui():
             ),
             ui.card(
                 ui.card_header("Download combined table (all rows)"),
-                ui.input_action_button("btn_download_csv", "Download CSV"),
+                ui.download_button("download_csv", "Download CSV"),
                 ui.output_text_verbatim("download_msg"),
             ),
             ui.card(

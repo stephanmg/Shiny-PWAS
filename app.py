@@ -186,18 +186,17 @@ def server(input, output, session):
             df_results.set(pd.DataFrame())
             _log("No data loaded.")
 
-    @reactive.Effect
-    @reactive.event(input.btn_download_csv)
-    def dl():
+    @output
+    @render.download(filename="results.csv")
+    def download_csv():
         """Download helper"""
         df = df_results.get()
         if df is None or df.empty:
             dl_msg.set("No data to download.")
             return
         tidy = tidy_table(df.copy())
-        path = "/mnt/data/multigene_results_all.csv"
-        tidy.to_csv(path, index=False)
-        dl_msg.set(f"Saved CSV to {path}")
+        yield tidy.to_csv(index=False).encode("utf-8")
+        _log("User downloaded CSV file to {filename}")
 
     @reactive.Effect
     @reactive.event(input.btn_plot)
