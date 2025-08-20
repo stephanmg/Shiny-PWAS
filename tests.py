@@ -251,7 +251,7 @@ def test_end_to_end_symbol_to_tidy_table(mock_get, monkeypatch):
 def test_labels_of_categories():
     """Test data release, if numbers change, data release for REST API endpoint changed!"""
     all_dfs = backend.get_all_label_lists()
-    assert all_dfs["CONTINUOUS_VARIABLE"] == 83
-    assert all_dfs["CV_ENDPOINTS"] == 21
-    assert all_dfs["SELF_REPORTED"] == 362
-    assert all_dfs["PHECODES"] == 1280
+    assert len(all_dfs["CONTINUOUS_VARIABLE"]) == 83
+    assert len(all_dfs["CV_ENDPOINTS"]) == 21
+    assert len(all_dfs["SELF_REPORTED"]) == 362
+    assert len(all_dfs["PHECODES"]) == 1280
