@@ -16,7 +16,7 @@ def make_ui():
         ui.sidebar(
             ui.input_text_area(
                 "genes",
-                "Gene names (comma or newline separated)",
+                "Gene names (comma or newline separated - case insensitive)",
                 value="METTL2A\nPCSK9",
                 width="100%",
                 height="120px",
@@ -96,46 +96,49 @@ def make_ui():
                 "limit", "Max rows per gene per group", value=1e6, min=1, step=1
             ),
             ui.input_action_button("btn_phenos", "Load phenotypes"),
-            ui.input_select(
-                "metric",
-                "Value to plot",
-                choices={"p": "p-value", "q": "q-value (FDR)"},
-                selected="p",
-            ),
-            ui.input_select(
-                "threshold",
-                "Threshold",
-                choices={
-                    "1.00": "1.00",
-                    "0.05": "0.05",
-                    "0.01": "0.01",
-                    "0.001": "0.001",
-                },
-                selected="0.05",
-            ),
-            ui.input_checkbox("neglog10", "Use −log10 scale", value=True),
-            ui.input_checkbox("show_legend", "Show legend", value=True),
-            ui.input_radio_buttons(
-                "plot_type",
-                "Visualization type",
-                choices={
-                    "Volcano plot": "Volcano plot",
-                    "Bar plot": "Bar plot",
-                    "Heatmap": "Heatmap",
-                    "Bubble plot": "Bubble plot",
-                },
-                selected="Volcano plot",
-            ),
-            ui.panel_conditional(
-                "input.plot_type == 'Bubble plot'",
-                ui.input_text_area("single_gene", "Single gene", value="PCSK9"),
-                ui.input_selectize(
-                    "single_gene_category",
-                    "Select category",
-                    choices=["CV_ENDPOINTS", "SELF_REPORTED", "PHECODES"],
+            ui.card(
+                ui.card_header("Visualization"),
+                ui.input_select(
+                    "metric",
+                    "Value to plot",
+                    choices={"p": "p-value", "q": "q-value (FDR)"},
+                    selected="p",
+                ),
+                ui.input_select(
+                    "threshold",
+                    "Threshold",
+                    choices={
+                        "1.00": "1.00",
+                        "0.05": "0.05",
+                        "0.01": "0.01",
+                        "0.001": "0.001",
+                    },
+                    selected="0.05",
+                ),
+                ui.input_checkbox("neglog10", "Use −log10 scale", value=True),
+                ui.input_checkbox("show_legend", "Show legend", value=True),
+                ui.input_radio_buttons(
+                    "plot_type",
+                    "Plot type",
+                    choices={
+                        "Volcano plot": "Volcano plot",
+                        "Bar plot": "Bar plot",
+                        "Heatmap": "Heatmap",
+                        "Bubble plot": "Bubble plot",
+                    },
+                    selected="Volcano plot",
+                ),
+                ui.panel_conditional(
+                    "input.plot_type == 'Bubble plot'",
+                    ui.input_text_area("single_gene", "Single gene", value="PCSK9"),
+                    ui.input_selectize(
+                        "single_gene_category",
+                        "Select category",
+                        choices=["CV_ENDPOINTS", "SELF_REPORTED", "PHECODES"],
+                    ),
                 ),
             ),
-            ui.input_action_button("btn_plot", "Load plot"),
+            # ui.input_action_button("btn_plot", "Load plot"),
             width=340,
         ),
         #######################################################################
