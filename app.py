@@ -48,13 +48,10 @@ def server(input, output, session):
     # Utility / helper functions
     ###########################################################################
     def _tbl(kind: str, filters: list):
-        print("filters:")
-        print(filters)
         """Tables: Get top N genes per endpoint"""
         # Get full dataframe
         df = df_results.get()
 
-        print("there")
         if df is None or df.empty:
             return tidy_table(
                 pd.DataFrame(),
@@ -63,7 +60,6 @@ def server(input, output, session):
                 filters=None,
             )
         sub = top_n_per_gene(df, kind, int(input.limit()))
-        print("tidy table 2nd call:")
         return tidy_table(
             sub,
             metric=input.metric(),
@@ -81,9 +77,7 @@ def server(input, output, session):
         return df
 
     def _safe_input(input, name):
-        print(f"in safe input: {name}")
         try:
-            print("in getattr")
             return getattr(input, name)()
         except AttributeError:
             return None
@@ -178,7 +172,6 @@ def server(input, output, session):
         use_log = bool(input.neglog10())
         limit = max(1, int(input.limit()))
 
-        print("before setting  filters:")
         filters = {
             "filter_cont": (
                 _safe_input(input, "filter_cont") if input.use_cont() else None
@@ -228,7 +221,6 @@ def server(input, output, session):
     @render.table
     def tbl_continuous():
         if input.use_cont():
-            print("use cont")
             return _tbl("CONTINUOUS_VARIABLE", _safe_input(input, "filter_cont"))
         return _tbl("CONTINUOUS_VARIABLE", None)
 

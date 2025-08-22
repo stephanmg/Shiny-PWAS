@@ -105,12 +105,9 @@ def tidy_table(
     threshold: float = 0.05,
     filters: list = (),
 ) -> pd.DataFrame:
-    print("in tidy table")
     """Format table"""
     if df.empty:
-        print("empty?")
         return pd.DataFrame(columns=["Gene", "Outcome ID", "Description", "p", "q"])
-    print("here?")
     m = enrich_labels(df.copy())
     out = pd.DataFrame(
         {
@@ -158,9 +155,7 @@ def get_single_gene_df(df: pd.DataFrame, gname: str, category: str) -> pd.DataFr
     if df.empty or not gname:
         return pd.DataFrame()
 
-    print(df["analysis_type"])
     df = df[df["analysis_type"] == category]
-    print(df)
 
     return df[df["gene"] == gname].copy()
 
