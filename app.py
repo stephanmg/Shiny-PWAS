@@ -1,4 +1,5 @@
 import sys
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -173,11 +174,20 @@ def server(input, output, session):
         """Status message for download"""
         return dl_msg.get()
 
+    @reactive.Calc
+    def prepared_df():
+        """Cache preparation of df"""
+        # get dataframe of results
+        df = df_results.get()
+        # global filter for p or q value
+        df = _filter_for_p_or_q_value(df)
+        return df
+
     @output
     @render.plot
     def plot_out():
-        df = df_results.get()
-        df = _filter_for_p_or_q_value(df)
+        # Get cache df
+        df = prepared_df()
 
         if df is None or df.empty:
             fig, ax = plt.subplots()
@@ -339,4 +349,5 @@ def server(input, output, session):
 ###############################################################################
 # START APPLICATION
 ###############################################################################
-app = App(app_ui, server)
+STATIC_DIR = Path(__file__).parent / "www"
+app = App(app_ui, server, static_assets=STATIC_DIR)
