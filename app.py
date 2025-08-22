@@ -1,3 +1,5 @@
+import sys
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import shiny.ui as ui
@@ -85,7 +87,7 @@ def server(input, output, session):
         try:
             return getattr(input, name)()
         except AttributeError:
-            print(f"Input {name} not yet created on UI")
+            print(f"Input {name} not yet created on UI", file=sys.stderr)
             return None
 
     def _make_selectize(id_, label, choices):
