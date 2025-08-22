@@ -7,6 +7,9 @@ API = "https://exphewas.statgen.org/v1/api"
 CAT_KEEP = ["outcome_id", "description", "outcome_string", "name", "label", "phenotype"]
 
 
+###############################################################################
+# GET RESULTS PER GENE
+###############################################################################
 def parse_gene_list(text: str) -> list[str]:
     """Parse a list of genes, either separated by comma or newline
     Return: Gene symbol in upper case compatible for ExPheWas REST API
@@ -49,6 +52,19 @@ def fetch_gene_results(ensg: str, subset: str = "BOTH") -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+###############################################################################
+# CATALOG FUNCTIONS
+###############################################################################
+
+KIND_CONT = "CONTINUOUS_VARIABLE"
+KIND_CV = "CV_ENDPOINTS"
+KIND_SELF = "SELF_REPORTED"
+KIND_PHE = "PHECODES"
+PATH_TO_CATALOG = "catalog/"
+
+VALID_KINDS = {KIND_CONT, KIND_CV, KIND_SELF, KIND_PHE}
+
+
 @lru_cache(maxsize=1)
 def outcome_catalog() -> pd.DataFrame:
     """Retrieve outcome catalog for phenotyping categories"""
@@ -88,17 +104,69 @@ def enrich_labels(df: pd.DataFrame) -> pd.DataFrame:
     return merged
 
 
+def _fetch_outcomes() -> pd.DataFrame:
+    """Fetch the full outcomes catalog once."""
+    r = requests.get(f"{API}/outcome", timeout=60)
+    r.raise_for_status()
+    return pd.DataFrame(r.json())
+
+
+def _pick_label_column(df: pd.DataFrame) -> str:
+    """
+    Pick the best available human-readable label column.
+    ExPheWAS often uses 'label'; some rows may have 'description'/'name'/'outcome_string'.
+    """
+    for col in ("label", "description", "name", "outcome_string"):
+        if col in df.columns:
+            return col
+    # Fallback to 'id' if nothing else exists
+    return "id"
+
+
+def get_label_list(kind: str) -> list[str]:
+    """
+    Return a list of unique labels (Descriptions) for the requested analysis_type.
+      kind ∈ {CONTINUOUS_VARIABLE, CV_ENDPOINTS, SELF_REPORTED, PHECODES}
+    """
+    if kind not in VALID_KINDS:
+        raise ValueError(
+            f"Unknown kind '{kind}'. Expected one of: {sorted(VALID_KINDS)}"
+        )
+
+    cat = _fetch_outcomes()
+    if "analysis_type" not in cat.columns:
+        return []
+
+    sub = cat[cat["analysis_type"] == kind].copy()
+    if sub.empty:
+        return []
+
+    label_col = _pick_label_column(sub)
+    return (
+        sub[label_col]
+        .dropna()
+        .astype(str)
+        .str.strip()
+        .replace({"": pd.NA})
+        .dropna()
+        .drop_duplicates()
+        .sort_values(key=lambda s: s.str.lower())
+        .tolist()
+    )
+
+
+###############################################################################
+# FILTERING AND TIDYING
+###############################################################################
+
+
 def filter_table(df: pd.DataFrame, filters: list):
     """Filter table with a list of filter values"""
-    if filters is None:
-        return df
-    if df is None or df.empty:
+    if filters is None or df is None or df.empty:
         return df
 
     mask = pd.Series(True, index=df.index)
-
     mask &= df["Description"].isin(filters)
-
     return df[mask].copy()
 
 
@@ -165,88 +233,30 @@ def get_single_gene_df(df: pd.DataFrame, gname: str, category: str) -> pd.DataFr
 
 
 ###############################################################################
-# CATALOG DATA
-###############################################################################
-KIND_CONT = "CONTINUOUS_VARIABLE"
-KIND_CV = "CV_ENDPOINTS"
-KIND_SELF = "SELF_REPORTED"
-KIND_PHE = "PHECODES"
-PATH_TO_CATALOG = "catalog/"
-
-VALID_KINDS = {KIND_CONT, KIND_CV, KIND_SELF, KIND_PHE}
-
-
-def _fetch_outcomes() -> pd.DataFrame:
-    """Fetch the full outcomes catalog once."""
-    r = requests.get(f"{API}/outcome", timeout=60)
-    r.raise_for_status()
-    return pd.DataFrame(r.json())
-
-
-def _pick_label_column(df: pd.DataFrame) -> str:
-    """
-    Pick the best available human-readable label column.
-    ExPheWAS often uses 'label'; some rows may have 'description'/'name'/'outcome_string'.
-    """
-    for col in ("label", "description", "name", "outcome_string"):
-        if col in df.columns:
-            return col
-    # Fallback to 'id' if nothing else exists
-    return "id"
-
-
-def get_label_list(kind: str) -> list[str]:
-    """
-    Return a list of unique labels (Descriptions) for the requested analysis_type.
-      kind ∈ {CONTINUOUS_VARIABLE, CV_ENDPOINTS, SELF_REPORTED, PHECODES}
-    """
-    if kind not in VALID_KINDS:
-        raise ValueError(
-            f"Unknown kind '{kind}'. Expected one of: {sorted(VALID_KINDS)}"
-        )
-
-    cat = _fetch_outcomes()
-    if "analysis_type" not in cat.columns:
-        return []
-
-    sub = cat[cat["analysis_type"] == kind].copy()
-    if sub.empty:
-        return []
-
-    label_col = _pick_label_column(sub)
-    return (
-        sub[label_col]
-        .dropna()
-        .astype(str)
-        .str.strip()
-        .replace({"": pd.NA})
-        .dropna()
-        .drop_duplicates()
-        .sort_values(key=lambda s: s.str.lower())
-        .tolist()
-    )
-
-
-###############################################################################
-# HELPER FUNCTIONS
+# HELPER FUNCTIONS FOR CATALOG DATA RETRIEVAL
 ###############################################################################
 def get_continuous_labels() -> list[str]:
+    """Get continous labels from catalog"""
     return get_label_list(KIND_CONT)
 
 
 def get_cv_labels() -> list[str]:
+    """Get cardiovascular labels from catalog"""
     return get_label_list(KIND_CV)
 
 
 def get_self_reported_labels() -> list[str]:
+    """Get self reported labels from catalog"""
     return get_label_list(KIND_SELF)
 
 
 def get_phecode_labels() -> list[str]:
+    """Get phecode labels from catalog"""
     return get_label_list(KIND_PHE)
 
 
 def get_all_label_lists() -> dict[str, list[str]]:
+    """Wrapper to retrieve, continous, cardivascular, self reproted and phecode labels"""
     return {
         KIND_CONT: get_continuous_labels(),
         KIND_CV: get_cv_labels(),

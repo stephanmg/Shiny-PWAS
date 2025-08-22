@@ -24,6 +24,9 @@ FILTER_MAP = {
 }
 
 
+###############################################################################
+# FILTER BY CATEGORY DESCRIPTION
+###############################################################################
 def filter_by_category_desc(
     df: pd.DataFrame,
     filters: dict,
@@ -73,6 +76,9 @@ def filter_by_category_desc(
     return df.loc[mask].copy()
 
 
+###############################################################################
+# HELPER FUNCTIONS FOR PLOTTING
+###############################################################################
 def prepare_plot_df(
     df: pd.DataFrame,
     metric: str,
