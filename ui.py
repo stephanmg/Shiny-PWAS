@@ -7,7 +7,7 @@ def make_ui():
         # SIDEBAR (LEFT)
         #######################################################################
         ui.sidebar(
-            ui.img(src="logo_pwas.png", style="width:100%; max-width:200px;"),
+            ui.img(src="logo_pwas.png", style="width:100%; max-width:340px;"),
             ui.input_text_area(
                 "genes",
                 "Gene names (comma or newline separated - case insensitive)",
