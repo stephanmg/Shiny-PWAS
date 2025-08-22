@@ -1,5 +1,6 @@
 import math
 
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -158,7 +159,9 @@ def add_jitter(df: pd.DataFrame, seed: int = 0, sd: float = 0.045) -> pd.DataFra
     return df
 
 
-def heatmap_plot(df, metric="p", use_log=True, pthresh=None):
+def heatmap_plot(
+    df, metric="p", use_log=True, pthresh=None
+) -> matplotlib.figure.Figure:
     """
     Make 4 heatmaps (2x2), one per analysis_type.
     df must have columns: gene, analysis_type, Description, and the metric (p or q).
@@ -228,7 +231,10 @@ def heatmap_plot(df, metric="p", use_log=True, pthresh=None):
     return fig
 
 
-def bubble_plot(d: pd.DataFrame, category: str, gene: str, metric: str):
+def bubble_plot(
+    d: pd.DataFrame, category: str, gene: str, metric: str
+) -> matplotlib.figure.Figure:
+    """Creates a bubble plot for a single gene in a given category with provided metric"""
     if d.empty:
         fig, ax = plt.subplots()
         ax.text(0.5, 0.5, "No rows for single gene.", ha="center", va="center")
@@ -282,7 +288,8 @@ def bubble_plot(d: pd.DataFrame, category: str, gene: str, metric: str):
     return fig
 
 
-def bar_plot(d: pd.DataFrame):
+def bar_plot(d: pd.DataFrame) -> matplotlib.figure.Figure:
+    """Creates 4 bar plots for all available phenotyping categories"""
     counts = d.groupby(["gene", "analysis_type"]).size().reset_index(name="count")
 
     genes = sorted(d["gene"].unique())
@@ -312,7 +319,8 @@ def volcano_plot(
     use_log: bool = False,
     show_legend: bool = True,
     metric: str = "p",
-):
+) -> matplotlib.figure.Figure:
+    """Create a grouped volcano plot for all available phenotyping categories"""
     fig, ax = plt.subplots(figsize=(7.2, 3.8))
     print(d)
     for gname, gdf in d.groupby("gene", sort=True):
