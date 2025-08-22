@@ -138,6 +138,7 @@ def tidy_table(
     else:
         out = filter_table(out, filters)
 
+    # return
     return out
 
 

@@ -60,6 +60,7 @@ def server(input, output, session):
                 threshold=float(input.threshold()),
                 filters=None,
             )
+
         # If data loaded and non-empty, we limit to the desired number of results
         sub = top_n_per_gene(df, kind, int(input.limit()))
         return tidy_table(

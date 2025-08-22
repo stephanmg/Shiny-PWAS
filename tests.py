@@ -241,7 +241,7 @@ def test_end_to_end_symbol_to_tidy_table(mock_get, monkeypatch):
     # force catalog to our fake
     monkeypatch.setattr(backend, "outcome_catalog", lambda: _sample_catalog_df())
 
-    tidy = backend.tidy_table(df)
+    tidy = backend.tidy_table(df, "p", 0.05, None)
     assert not tidy.empty
     assert "Description" in tidy.columns
     # sanity: at least the O3 MI row should be present
