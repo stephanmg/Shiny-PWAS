@@ -133,7 +133,7 @@ def tidy_table(
 
     # if filter length is 0, meaning no variable selected to filter for, return identity
     if len(filters) == 0:
-        return out
+        return pd.DataFrame(columns=["Gene", "Outcome ID", "Description", "p", "q"])
     # else if filter not None, and variable provided by user, we filter for only these variables
     else:
         out = filter_table(out, filters)

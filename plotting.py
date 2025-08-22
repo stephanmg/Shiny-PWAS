@@ -326,7 +326,6 @@ def volcano_plot(
 ) -> matplotlib.figure.Figure:
     """Create a grouped volcano plot for all available phenotyping categories"""
     fig, ax = plt.subplots(figsize=(7.2, 3.8))
-    print(d)
     for gname, gdf in d.groupby("gene", sort=True):
         ax.scatter(gdf["_xj"], gdf["_y"], s=20, alpha=0.8, label=gname)
 
