@@ -46,8 +46,10 @@ def filter_by_category_desc(
     mask = pd.Series(True, index=df.index)
 
     for ui_key, values in filters.items():
-        if not values:
-            continue  # nothing selected for this category -> don't constrain it
+        if values is None:
+            continue  # no filtering, display all entries, no checkbox ticked for filtering
+        if len(values) == 0:
+            pass
 
         kind = FILTER_MAP.get(ui_key)
         if not kind:
@@ -56,7 +58,7 @@ def filter_by_category_desc(
         is_kind = df["analysis_type"].eq(kind)
 
         if exact:
-            # Exact match on Description
+            # We match on empty string, so we get no matches, we invert this, because empty string means no variable selected for filtering
             is_match = df[desc_col].astype(str).isin(set(map(str, values)))
         else:
             # Case-insensitive substring match on Description
@@ -128,10 +130,7 @@ def prepare_plot_df(
     # safe values with epsilon for zeros when using -log10 in the app
     d["_vals"] = d[metric].astype(float).to_numpy()
 
-    if filters is None:
-        return d
-    else:
-        return filter_by_category_desc(d, filters, desc_col="Description", exact=True)
+    return filter_by_category_desc(d, filters, desc_col="Description", exact=True)
 
 
 def apply_scale(

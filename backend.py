@@ -105,9 +105,12 @@ def tidy_table(
     threshold: float = 0.05,
     filters: list = (),
 ) -> pd.DataFrame:
+    print("in tidy table")
     """Format table"""
     if df.empty:
+        print("empty?")
         return pd.DataFrame(columns=["Gene", "Outcome ID", "Description", "p", "q"])
+    print("here?")
     m = enrich_labels(df.copy())
     out = pd.DataFrame(
         {
@@ -124,8 +127,14 @@ def tidy_table(
     if metric in out.columns:
         out = out[out[metric] < threshold]
 
+    # if no filter provided, display all variables per default
+    if filters is None:
+        return out
+
+    # if filter length is 0, meaning no variable selected to filter for, return identity
     if len(filters) == 0:
         return out
+    # else if filter not None, and variable provided by user, we filter for only these variables
     else:
         out = filter_table(out, filters)
 

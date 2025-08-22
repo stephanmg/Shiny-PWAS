@@ -1,9 +1,14 @@
 import matplotlib.pyplot as plt
 import pandas as pd
+import shiny.ui as ui
 from shiny import App, reactive, render
 
 from backend import (
     fetch_gene_results,
+    get_continuous_labels,
+    get_cv_labels,
+    get_phecode_labels,
+    get_self_reported_labels,
     get_single_gene_df,
     outcome_catalog,
     parse_gene_list,
@@ -43,10 +48,13 @@ def server(input, output, session):
     # Utility / helper functions
     ###########################################################################
     def _tbl(kind: str, filters: list):
+        print("filters:")
+        print(filters)
         """Tables: Get top N genes per endpoint"""
         # Get full dataframe
         df = df_results.get()
 
+        print("there")
         if df is None or df.empty:
             return tidy_table(
                 pd.DataFrame(),
@@ -55,6 +63,7 @@ def server(input, output, session):
                 filters=None,
             )
         sub = top_n_per_gene(df, kind, int(input.limit()))
+        print("tidy table 2nd call:")
         return tidy_table(
             sub,
             metric=input.metric(),
@@ -70,6 +79,14 @@ def server(input, output, session):
         if str(input.metric()) in df.columns:
             df = df[df[str(input.metric())] < float(input.threshold())]
         return df
+
+    def _safe_input(input, name):
+        print(f"in safe input: {name}")
+        try:
+            print("in getattr")
+            return getattr(input, name)()
+        except AttributeError:
+            return None
 
     ###########################################################################
     # Effects and events
@@ -160,24 +177,19 @@ def server(input, output, session):
         metric = input.metric()
         use_log = bool(input.neglog10())
         limit = max(1, int(input.limit()))
-        if (
-            len(
-                input.filter_cont()
-                + input.filter_cv()
-                + input.filter_self()
-                + input.filter_phe()
-            )
-            == 0
-        ):
-            d = prepare_plot_df(df, metric, limit, outcome_catalog(), None)
-        else:
-            filters = {
-                "filter_cont": input.filter_cont(),
-                "filter_cv": input.filter_cv(),
-                "filter_self": input.filter_self(),
-                "filter_phe": input.filter_phe(),
-            }
-            d = prepare_plot_df(df, metric, limit, outcome_catalog(), filters)
+
+        print("before setting  filters:")
+        filters = {
+            "filter_cont": (
+                _safe_input(input, "filter_cont") if input.use_cont() else None
+            ),
+            "filter_cv": _safe_input(input, "filter_cv") if input.use_cv() else None,
+            "filter_self": (
+                _safe_input(input, "filter_self") if input.use_self() else None
+            ),
+            "filter_phe": _safe_input(input, "filter_phe") if input.use_phe() else None,
+        }
+        d = prepare_plot_df(df, metric, limit, outcome_catalog(), filters)
 
         if d.empty or input.plot_type() is None:
             fig, ax = plt.subplots()
@@ -215,30 +227,104 @@ def server(input, output, session):
     @output
     @render.table
     def tbl_continuous():
-        return _tbl("CONTINUOUS_VARIABLE", input.filter_cont())
+        if input.use_cont():
+            print("use cont")
+            return _tbl("CONTINUOUS_VARIABLE", _safe_input(input, "filter_cont"))
+        return _tbl("CONTINUOUS_VARIABLE", None)
 
     @output
     @render.table
     def tbl_cv():
-        return _tbl("CV_ENDPOINTS", input.filter_cv())
+        if input.use_cv():
+            return _tbl("CV_ENDPOINTS", _safe_input(input, "filter_cv"))
+        return _tbl("CV_ENDPOINTS", None)
 
     @output
     @render.table
     def tbl_self():
-        return _tbl("SELF_REPORTED", input.filter_self())
+        if input.use_self():
+            return _tbl("SELF_REPORTED", _safe_input(input, "filter_self"))
+        return _tbl("SELF_REPORTED", None)
 
     @output
     @render.table
     def tbl_phecode():
-        return _tbl("PHECODES", input.filter_phe())
+        if input.use_phe():
+            return _tbl("PHECODES", _safe_input(input, "filter_phe"))
+        return _tbl("PHECODES", _safe_input(input, "filter_phe"))
 
     @output
     @render.text
     def log_text():
         return logs.get() or "…"
 
+    def make_selectize(id_, label, choices):
+        return ui.input_selectize(
+            id_,
+            label,
+            choices=choices,
+            multiple=True,
+            options={
+                "create": True,
+                "persist": False,
+                "placeholder": "Type to search…",
+            },
+        )
 
-###############################################################################
+    @output
+    @render.ui
+    def filters_nav():
+        panels = []
+        if input.use_cont():
+            panels.append(
+                ui.nav_panel(
+                    "Continuous variables",
+                    make_selectize(
+                        "filter_cont",
+                        "Select continuous variables",
+                        get_continuous_labels(),
+                    ),
+                )
+            )
+        if input.use_cv():
+            panels.append(
+                ui.nav_panel(
+                    "CV endpoints",
+                    make_selectize("filter_cv", "Select CV endpoints", get_cv_labels()),
+                )
+            )
+        if input.use_self():
+            panels.append(
+                ui.nav_panel(
+                    "Self reported",
+                    make_selectize(
+                        "filter_self",
+                        "Select self reported",
+                        get_self_reported_labels(),
+                    ),
+                )
+            )
+        if input.use_phe():
+            panels.append(
+                ui.nav_panel(
+                    "Phecodes",
+                    make_selectize(
+                        "filter_phe", "Select phecodes", get_phecode_labels()
+                    ),
+                )
+            )
+
+        if not panels:
+            return ui.div(
+                {"class": "text-muted"},
+                "Enable filter categories with the checkboxes above.",
+            )
+
+        return ui.navset_pill(*panels)
+
+    ###############################################################################
+
+
 # Start application
 ###############################################################################
 app = App(app_ui, server)

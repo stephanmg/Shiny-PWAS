@@ -1,12 +1,5 @@
 from shiny import ui
 
-from backend import (
-    get_continuous_labels,
-    get_cv_labels,
-    get_phecode_labels,
-    get_self_reported_labels,
-)
-
 
 def make_ui():
     return ui.page_sidebar(
@@ -24,81 +17,12 @@ def make_ui():
             ui.card(
                 ui.card_header("Filter phenotypes by category"),
                 ui.layout_column_wrap(
-                    ui.input_checkbox("use_cont", "Use Continuous", value=True),
+                    ui.input_checkbox("use_cont", "Use Continuous", value=False),
                     ui.input_checkbox("use_cv", "Use CV endpoints", value=False),
-                    ui.input_checkbox("use_self", "Use Self reported", value=True),
-                    ui.input_checkbox("use_phe", "Use Phecodes", value=True),
+                    ui.input_checkbox("use_self", "Use Self reported", value=False),
+                    ui.input_checkbox("use_phe", "Use Phecodes", value=False),
                 ),
-                ui.navset_pill(
-                    ui.nav_panel(
-                        "Continuous variables",
-                        ui.panel_conditional(
-                            "input.use_cont",
-                            ui.input_selectize(
-                                "filter_cont",
-                                "Select continuous variables",
-                                choices=get_continuous_labels(),
-                                multiple=True,
-                                options={
-                                    "create": True,
-                                    "persist": False,
-                                    "placeholder": "Type to search…",
-                                },
-                            ),
-                        ),
-                    ),
-                    ui.nav_panel(
-                        "Cardiovascular endpoints",
-                        ui.panel_conditional(
-                            "input.use_cv",
-                            ui.input_selectize(
-                                "filter_cv",
-                                "Select cardiovascular endpoints",
-                                choices=get_cv_labels(),
-                                multiple=True,
-                                options={
-                                    "create": True,
-                                    "persist": False,
-                                    "placeholder": "Type to search…",
-                                },
-                            ),
-                        ),
-                    ),
-                    ui.nav_panel(
-                        "Self reported",
-                        ui.panel_conditional(
-                            "input.use_self",
-                            ui.input_selectize(
-                                "filter_self",
-                                "Select self reported phenotypes",
-                                choices=get_self_reported_labels(),
-                                multiple=True,
-                                options={
-                                    "create": True,
-                                    "persist": False,
-                                    "placeholder": "Type to search…",
-                                },
-                            ),
-                        ),
-                    ),
-                    ui.nav_panel(
-                        "Phecodes",
-                        ui.panel_conditional(
-                            "input.use_phe",
-                            ui.input_selectize(
-                                "filter_phe",
-                                "Select phecodes",
-                                choices=get_phecode_labels(),
-                                multiple=True,
-                                options={
-                                    "create": True,
-                                    "persist": False,
-                                    "placeholder": "Type to search…",
-                                },
-                            ),
-                        ),
-                    ),
-                ),
+                ui.output_ui("filters_nav"),
             ),
             ui.input_radio_buttons(
                 "subset",
