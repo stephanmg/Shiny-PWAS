@@ -93,6 +93,110 @@ def four_heatmaps(df, metric="p", use_log=True, pthresh=None):
     return fig
 
 
+def bubble_plot(d: pd.DataFrame, category: str, gene: str, metric: str):
+    if d.empty:
+        fig, ax = plt.subplots()
+        ax.text(0.5, 0.5, "No rows for single gene.", ha="center", va="center")
+        ax.set_axis_off()
+        return fig
+
+    sizes = d["n_cases"] / d["n_cases"].max() * 800  # adjust scaling factor
+
+    if metric not in d.columns:
+        metric = "p"  # fallback
+    vals = d[metric].replace(0, 1e-300)  # avoid log(0)
+
+    # Use -log10 for better spread
+    colors = -np.log10(vals)
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+    sc = ax.scatter(
+        d["n_controls"],
+        d["Description"],
+        s=sizes,
+        c=colors,
+        cmap="viridis_r",
+        alpha=0.8,
+        edgecolor="k",
+    )
+
+    ax.set_xlabel("Number of controls")
+    ax.set_ylabel("Phenotype (Description)")
+    ax.set_title(f"Bubble plot for {gene} (colored by −log10({metric}))")
+    ax.grid(True, linestyle="--", alpha=0.5)
+    ax.tick_params(axis="y", labelsize=8)
+
+    # Colorbar for metric
+    cbar = fig.colorbar(sc, ax=ax, shrink=0.8)
+    cbar.set_label(f"−log10({metric})")
+
+    # Legend for bubble sizes
+    for size in [d["n_cases"].min(), d["n_cases"].median(), d["n_cases"].max()]:
+        ax.scatter(
+            [],
+            [],
+            s=size / d["n_cases"].max() * 800,
+            c="gray",
+            alpha=0.5,
+            edgecolor="k",
+            label=f"{int(size)} cases",
+        )
+    ax.legend(scatterpoints=1, frameon=True, labelspacing=1, title="n_cases")
+
+    fig.tight_layout()
+    return fig
+
+
+def bar_plot(d: pd.DataFrame):
+    counts = d.groupby(["gene", "analysis_type"]).size().reset_index(name="count")
+
+    genes = sorted(d["gene"].unique())
+    x = np.arange(len(genes))
+    width = 0.2
+
+    fig, ax = plt.subplots(figsize=(8, 4.5))
+
+    for i, kind in enumerate(KIND_ORDER):
+        subset = counts[counts["analysis_type"] == kind]
+        # Align with all genes (fill missing with 0)
+        y = [subset.loc[subset["gene"] == g, "count"].sum() for g in genes]
+        ax.bar(x + i * width, y, width, label=KIND_LABEL[kind])
+
+    ax.set_xticks(x + width * (len(KIND_ORDER) - 1) / 2)
+    ax.set_xticklabels(genes, rotation=45, ha="right")
+    ax.set_ylabel("Number of outcomes")
+    ax.set_title("Counts per gene by analysis type")
+    ax.legend(title="Category")
+    fig.tight_layout()
+    return fig
+
+
+def volcano_plot(
+    d: pd.DataFrame,
+    limit: int,
+    use_log: bool = False,
+    show_legend: bool = True,
+    metric: str = "p",
+):
+    fig, ax = plt.subplots(figsize=(7.2, 3.8))
+    print(d)
+    for gname, gdf in d.groupby("gene", sort=True):
+        ax.scatter(gdf["_xj"], gdf["_y"], s=20, alpha=0.8, label=gname)
+
+    thresh_y = -math.log10(0.05) if use_log else 0.05
+    ax.axhline(thresh_y, linestyle=":", linewidth=1)
+    ax.set_xticks(range(len(KIND_ORDER)))
+    ax.set_xticklabels([KIND_LABEL[k] for k in KIND_ORDER])
+    ax.set_ylabel(f"−log10({metric})" if use_log else metric)
+    ax.set_title(
+        f"{'−log10('+metric+')' if use_log else metric} by analysis type (top {limit}/gene/group)"
+    )
+    if show_legend:
+        ax.legend(title="Gene", loc="upper right", frameon=True, fontsize="small")
+    fig.tight_layout()
+    return fig
+
+
 ###############################################################################
 # Server / business logic
 ###############################################################################
@@ -135,11 +239,6 @@ def server(input, output, session):
         if str(input.metric()) in df.columns:
             df = df[df[str(input.metric())] < float(input.threshold())]
         return df
-
-    def _filter_for_phenotypes_by_category(df: pd.DataFrame):
-        mask = pd.Series(True, index=df.index)
-        mask &= df["Description"].isin(input.filter_cont())
-        return mask
 
     ###########################################################################
     # Effects and events
@@ -260,60 +359,16 @@ def server(input, output, session):
         d = add_jitter(d, seed=0, sd=0.045)
 
         if str(input.plot_type()) == "Volcano plot":
-            # draw
-            fig, ax = plt.subplots(figsize=(7.2, 3.8))
-            for gname, gdf in d.groupby("gene", sort=True):
-                ax.scatter(gdf["_xj"], gdf["_y"], s=20, alpha=0.8, label=gname)
-
-            thresh_y = -math.log10(0.05) if use_log else 0.05
-            ax.axhline(thresh_y, linestyle=":", linewidth=1)
-            ax.set_xticks(range(len(KIND_ORDER)))
-            ax.set_xticklabels([KIND_LABEL[k] for k in KIND_ORDER])
-            ax.set_ylabel(f"−log10({metric})" if use_log else metric)
-            ax.set_title(
-                f"{'−log10('+metric+')' if use_log else metric} by analysis type (top {limit}/gene/group)"
+            return volcano_plot(
+                d,
+                int(input.limit()),
+                bool(input.neglog10()),
+                bool(input.show_legend()),
+                str(input.metric()),
             )
-            if input.show_legend():
-                ax.legend(
-                    title="Gene", loc="upper right", frameon=True, fontsize="small"
-                )
-            fig.tight_layout()
-            return fig
 
         if str(input.plot_type()) == "Bar plot":
-            # Ensure categories are consistent
-            order = ["CONTINUOUS_VARIABLE", "CV_ENDPOINTS", "SELF_REPORTED", "PHECODES"]
-            labels = {
-                "CONTINUOUS_VARIABLE": "Continuous",
-                "CV_ENDPOINTS": "CV endpoints",
-                "SELF_REPORTED": "Self reported",
-                "PHECODES": "Phecodes",
-            }
-
-            # Count rows per (gene, analysis_type)
-            counts = (
-                d.groupby(["gene", "analysis_type"]).size().reset_index(name="count")
-            )
-
-            genes = sorted(d["gene"].unique())
-            x = np.arange(len(genes))
-            width = 0.2
-
-            fig, ax = plt.subplots(figsize=(8, 4.5))
-
-            for i, kind in enumerate(order):
-                subset = counts[counts["analysis_type"] == kind]
-                # Align with all genes (fill missing with 0)
-                y = [subset.loc[subset["gene"] == g, "count"].sum() for g in genes]
-                ax.bar(x + i * width, y, width, label=labels[kind])
-
-            ax.set_xticks(x + width * (len(order) - 1) / 2)
-            ax.set_xticklabels(genes, rotation=45, ha="right")
-            ax.set_ylabel("Number of outcomes")
-            ax.set_title("Counts per gene by analysis type")
-            ax.legend(title="Category")
-            fig.tight_layout()
-            return fig
+            return bar_plot(d)
 
         if str(input.plot_type()) == "Heatmap":
             return four_heatmaps(
@@ -322,59 +377,9 @@ def server(input, output, session):
         if str(input.plot_type()) == "Bubble plot":
             gene = input.single_gene()
             category = input.single_gene_category()
-            d = get_single_gene_df(d, gene, category)
-            if d.empty:
-                fig, ax = plt.subplots()
-                ax.text(0.5, 0.5, "No rows for single gene.", ha="center", va="center")
-                ax.set_axis_off()
-                return fig
-
-            sizes = d["n_cases"] / d["n_cases"].max() * 800  # adjust scaling factor
-
-            metric = input.metric()
-            if metric not in d.columns:
-                metric = "p"  # fallback
-            vals = d[metric].replace(0, 1e-300)  # avoid log(0)
-
-            # Use -log10 for better spread
-            colors = -np.log10(vals)
-
-            fig, ax = plt.subplots(figsize=(10, 5))
-            sc = ax.scatter(
-                d["n_controls"],
-                d["Description"],
-                s=sizes,
-                c=colors,
-                cmap="viridis_r",
-                alpha=0.8,
-                edgecolor="k",
+            return bubble_plot(
+                get_single_gene_df(d, gene, category), category, gene, input.metric()
             )
-
-            ax.set_xlabel("Number of controls")
-            ax.set_ylabel("Phenotype (Description)")
-            ax.set_title(f"Bubble plot for {gene} (colored by −log10({metric}))")
-            ax.grid(True, linestyle="--", alpha=0.5)
-            ax.tick_params(axis="y", labelsize=8)
-
-            # Colorbar for metric
-            cbar = fig.colorbar(sc, ax=ax, shrink=0.8)
-            cbar.set_label(f"−log10({metric})")
-
-            # Legend for bubble sizes
-            for size in [d["n_cases"].min(), d["n_cases"].median(), d["n_cases"].max()]:
-                ax.scatter(
-                    [],
-                    [],
-                    s=size / d["n_cases"].max() * 800,
-                    c="gray",
-                    alpha=0.5,
-                    edgecolor="k",
-                    label=f"{int(size)} cases",
-                )
-            ax.legend(scatterpoints=1, frameon=True, labelspacing=1, title="n_cases")
-
-            fig.tight_layout()
-            return fig
 
     @output
     @render.table
