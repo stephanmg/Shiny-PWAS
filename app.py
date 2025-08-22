@@ -52,6 +52,7 @@ def server(input, output, session):
         # Get full dataframe
         df = df_results.get()
 
+        # No data loaded or empty data frame of results
         if df is None or df.empty:
             return tidy_table(
                 pd.DataFrame(),
@@ -59,6 +60,7 @@ def server(input, output, session):
                 threshold=float(input.threshold()),
                 filters=None,
             )
+        # If data loaded and non-empty, we limit to the desired number of results
         sub = top_n_per_gene(df, kind, int(input.limit()))
         return tidy_table(
             sub,
@@ -72,15 +74,32 @@ def server(input, output, session):
         logs.set((logs.get() or "") + msg + "\n")
 
     def _filter_for_p_or_q_value(df: pd.DataFrame):
+        """Filter either by p or q value (FDR)"""
         if str(input.metric()) in df.columns:
             df = df[df[str(input.metric())] < float(input.threshold())]
         return df
 
     def _safe_input(input, name):
+        """Safe get conditional input panels which haven't been added to the UI"""
         try:
             return getattr(input, name)()
         except AttributeError:
+            print(f"Input {name} not yet created on UI")
             return None
+
+    def _make_selectize(id_, label, choices):
+        """Create UI components for selection fields"""
+        return ui.input_selectize(
+            id_,
+            label,
+            choices=choices,
+            multiple=True,
+            options={
+                "create": True,
+                "persist": False,
+                "placeholder": "Type to search…",
+            },
+        )
 
     ###########################################################################
     # Effects and events
@@ -148,6 +167,7 @@ def server(input, output, session):
     @output
     @render.text
     def download_msg():
+        """Status message for download"""
         return dl_msg.get()
 
     @output
@@ -194,6 +214,7 @@ def server(input, output, session):
         d = apply_scale(d, use_log, metric, eps=1e-300)
         d = add_jitter(d, seed=0, sd=0.045)
 
+        # plot with given type
         if str(input.plot_type()) == "Volcano plot":
             return volcano_plot(
                 d,
@@ -220,6 +241,7 @@ def server(input, output, session):
     @output
     @render.table
     def tbl_continuous():
+        """CONTINUOUS VARIABLES"""
         if input.use_cont():
             return _tbl("CONTINUOUS_VARIABLE", _safe_input(input, "filter_cont"))
         return _tbl("CONTINUOUS_VARIABLE", None)
@@ -227,6 +249,7 @@ def server(input, output, session):
     @output
     @render.table
     def tbl_cv():
+        """CARDIOVASCULAR VARIABLES"""
         if input.use_cv():
             return _tbl("CV_ENDPOINTS", _safe_input(input, "filter_cv"))
         return _tbl("CV_ENDPOINTS", None)
@@ -234,6 +257,7 @@ def server(input, output, session):
     @output
     @render.table
     def tbl_self():
+        """SELF REPORTED"""
         if input.use_self():
             return _tbl("SELF_REPORTED", _safe_input(input, "filter_self"))
         return _tbl("SELF_REPORTED", None)
@@ -241,6 +265,7 @@ def server(input, output, session):
     @output
     @render.table
     def tbl_phecode():
+        """PHECODES"""
         if input.use_phe():
             return _tbl("PHECODES", _safe_input(input, "filter_phe"))
         return _tbl("PHECODES", _safe_input(input, "filter_phe"))
@@ -248,21 +273,12 @@ def server(input, output, session):
     @output
     @render.text
     def log_text():
+        """ " Log message"""
         return logs.get() or "…"
 
-    def make_selectize(id_, label, choices):
-        return ui.input_selectize(
-            id_,
-            label,
-            choices=choices,
-            multiple=True,
-            options={
-                "create": True,
-                "persist": False,
-                "placeholder": "Type to search…",
-            },
-        )
-
+    ############################################################################
+    # DYNAMIC UI CONTENT
+    ############################################################################
     @output
     @render.ui
     def filters_nav():
@@ -271,7 +287,7 @@ def server(input, output, session):
             panels.append(
                 ui.nav_panel(
                     "Continuous variables",
-                    make_selectize(
+                    _make_selectize(
                         "filter_cont",
                         "Select continuous variables",
                         get_continuous_labels(),
@@ -282,14 +298,16 @@ def server(input, output, session):
             panels.append(
                 ui.nav_panel(
                     "CV endpoints",
-                    make_selectize("filter_cv", "Select CV endpoints", get_cv_labels()),
+                    _make_selectize(
+                        "filter_cv", "Select CV endpoints", get_cv_labels()
+                    ),
                 )
             )
         if input.use_self():
             panels.append(
                 ui.nav_panel(
                     "Self reported",
-                    make_selectize(
+                    _make_selectize(
                         "filter_self",
                         "Select self reported",
                         get_self_reported_labels(),
@@ -300,7 +318,7 @@ def server(input, output, session):
             panels.append(
                 ui.nav_panel(
                     "Phecodes",
-                    make_selectize(
+                    _make_selectize(
                         "filter_phe", "Select phecodes", get_phecode_labels()
                     ),
                 )
@@ -314,9 +332,8 @@ def server(input, output, session):
 
         return ui.navset_pill(*panels)
 
-    ###############################################################################
 
-
-# Start application
+###############################################################################
+# START APPLICATION
 ###############################################################################
 app = App(app_ui, server)

@@ -158,6 +158,11 @@ def add_jitter(df: pd.DataFrame, seed: int = 0, sd: float = 0.045) -> pd.DataFra
     return df
 
 
+###############################################################################
+# PLOT TYPES FOR VISUALIZATION
+###############################################################################
+
+
 def heatmap_plot(
     df, metric="p", use_log=True, pthresh=None
 ) -> matplotlib.figure.Figure:

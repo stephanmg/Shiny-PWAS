@@ -39,6 +39,7 @@ def resolve_gene(name: str) -> tuple[str | None, str | None]:
 
 
 def fetch_gene_results(ensg: str, subset: str = "BOTH") -> pd.DataFrame:
+    """Fetch results for a specified gene"""
     r = requests.get(
         f"{API}/gene/{ensg}/results", params={"analysis_subset": subset}, timeout=60
     )
@@ -50,6 +51,7 @@ def fetch_gene_results(ensg: str, subset: str = "BOTH") -> pd.DataFrame:
 
 @lru_cache(maxsize=1)
 def outcome_catalog() -> pd.DataFrame:
+    """Retrieve outcome catalog for phenotyping categories"""
     r = requests.get(f"{API}/outcome", timeout=60)
     r.raise_for_status()
     cat = pd.DataFrame(r.json())
@@ -87,6 +89,7 @@ def enrich_labels(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def filter_table(df: pd.DataFrame, filters: list):
+    """Filter table with a list of filter values"""
     if filters is None:
         return df
     if df is None or df.empty:
@@ -223,6 +226,9 @@ def get_label_list(kind: str) -> list[str]:
     )
 
 
+###############################################################################
+# HELPER FUNCTIONS
+###############################################################################
 def get_continuous_labels() -> list[str]:
     return get_label_list(KIND_CONT)
 
