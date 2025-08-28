@@ -202,8 +202,9 @@ def tidy_table(
 
     # Drop non-existing columns for other categories
     for col in ["N cases", "N ctrl", "N"]:
-        if out[col].isna().all():
-            out.drop(columns=col, inplace=True)
+        if col in m.columns:
+            if out[col].isna().all():
+                out.drop(columns=col, inplace=True)
 
     if metric in out.columns:
         out = out[out[metric] < threshold]
