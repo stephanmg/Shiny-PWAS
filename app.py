@@ -92,12 +92,12 @@ def server(input, output, session):
             return None
 
     def _make_selectize(id_, label, choices):
-        """Create UI components for selection fields"""
         return ui.input_selectize(
             id_,
             label,
             choices=choices,
             multiple=True,
+            selected=sel_keep.get(id_, []),
             options={
                 "create": True,
                 "persist": False,
@@ -108,6 +108,33 @@ def server(input, output, session):
     ###########################################################################
     # Effects and events
     ###########################################################################
+    sel_keep = {  # should not be reactive, otherwise we have a classical reactive infinite loop
+        "filter_cont": [],
+        "filter_cv": [],
+        "filter_self": [],
+        "filter_phe": [],
+    }
+
+    @reactive.Effect
+    @reactive.event(input.filter_cont)
+    def _save_cont():
+        sel_keep["filter_cont"] = input.filter_cont() or []
+
+    @reactive.Effect
+    @reactive.event(input.filter_cv)
+    def _save_cv():
+        sel_keep["filter_cv"] = input.filter_cv() or []
+
+    @reactive.Effect
+    @reactive.event(input.filter_self)
+    def _save_self():
+        sel_keep["filter_self"] = input.filter_self() or []
+
+    @reactive.Effect
+    @reactive.event(input.filter_phe)
+    def _save_phe():
+        sel_keep["filter_phe"] = input.filter_phe() or []
+
     @reactive.Effect
     @reactive.event(input.btn_phenos, input.genes)
     def load_phenos():
