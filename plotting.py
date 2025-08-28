@@ -242,7 +242,11 @@ def heatmap_plot(
 
 
 def bubble_plot(
-    d: pd.DataFrame, category: str, gene: str, metric: str
+    d: pd.DataFrame,
+    category: str,
+    gene: str,
+    metric: str,
+    show_legend: bool,
 ) -> matplotlib.figure.Figure:
     """Creates a bubble plot for a single gene in a given category with provided metric"""
     if d.empty:
@@ -282,23 +286,24 @@ def bubble_plot(
     cbar.set_label(f"−log10({metric})")
 
     # Legend for bubble sizes
-    for size in [d["n_cases"].min(), d["n_cases"].median(), d["n_cases"].max()]:
-        ax.scatter(
-            [],
-            [],
-            s=size / d["n_cases"].max() * 800,
-            c="gray",
-            alpha=0.5,
-            edgecolor="k",
-            label=f"{int(size)} cases",
-        )
-    ax.legend(scatterpoints=1, frameon=True, labelspacing=1, title="n_cases")
+    if show_legend:
+        for size in [d["n_cases"].min(), d["n_cases"].median(), d["n_cases"].max()]:
+            ax.scatter(
+                [],
+                [],
+                s=size / d["n_cases"].max() * 800,
+                c="gray",
+                alpha=0.5,
+                edgecolor="k",
+                label=f"{int(size)} cases",
+            )
+        ax.legend(scatterpoints=1, frameon=True, labelspacing=1, title="n_cases")
 
     fig.tight_layout()
     return fig
 
 
-def bar_plot(d: pd.DataFrame) -> matplotlib.figure.Figure:
+def bar_plot(d: pd.DataFrame, show_legend: bool) -> matplotlib.figure.Figure:
     """Creates 4 bar plots for all available phenotyping categories"""
     counts = d.groupby(["gene", "analysis_type"]).size().reset_index(name="count")
 
@@ -318,7 +323,8 @@ def bar_plot(d: pd.DataFrame) -> matplotlib.figure.Figure:
     ax.set_xticklabels(genes, rotation=45, ha="right")
     ax.set_ylabel("Number of outcomes")
     ax.set_title("Counts per gene by analysis type")
-    ax.legend(title="Category")
+    if show_legend:
+        ax.legend(title="Category")
     fig.tight_layout()
     return fig
 

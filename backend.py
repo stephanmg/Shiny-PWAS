@@ -192,6 +192,19 @@ def tidy_table(
     if "q" in m.columns:
         out["q"] = m["q"]
 
+    # Add N cases, N ctrl and N (for CONTINOUS_VARIABLE only)
+    if "n_cases" in m.columns:
+        out["N cases"] = m["n_cases"]
+    if "n_controls" in m.columns:
+        out["N ctrl"] = m["n_controls"]
+    if "n" in m.columns:
+        out["N"] = m["n"]
+
+    # Drop non-existing columns for other categories
+    for col in ["N cases", "N ctrl", "N"]:
+        if out[col].isna().all():
+            out.drop(columns=col, inplace=True)
+
     if metric in out.columns:
         out = out[out[metric] < threshold]
 
@@ -223,9 +236,11 @@ def top_n_per_gene(df: pd.DataFrame, analysis_type: str, n: int) -> pd.DataFrame
 
 
 def get_single_gene_df(df: pd.DataFrame, gname: str, category: str) -> pd.DataFrame:
+    print("too")
     """Return subset of df for a single gene chosen from the input list."""
     if df.empty or not gname:
         return pd.DataFrame()
+    print("empty?")
 
     df = df[df["analysis_type"] == category]
 

@@ -191,9 +191,9 @@ def server(input, output, session):
         if df is None or df.empty:
             dl_msg.set("No data to download.")
             return
-        tidy = tidy_table(df.copy())
-        yield tidy.to_csv(index=False).encode("utf-8")
-        _log("User downloaded CSV file to {filename}")
+        # TODO: Yield all data currently, perhaps want filtering here too before download?
+        _log("User downloaded CSV file")
+        yield df.to_csv(index=False).encode("utf-8")
 
     @output
     @render.text
@@ -265,17 +265,21 @@ def server(input, output, session):
             )
 
         if str(input.plot_type()) == "Bar plot":
-            return bar_plot(d)
+            return bar_plot(d, input.show_legend())
 
         if str(input.plot_type()) == "Heatmap":
             return heatmap_plot(
                 d, input.metric(), bool(input.neglog10()), float(input.threshold())
             )
         if str(input.plot_type()) == "Bubble plot":
-            gene = input.single_gene()
+            gene = input.single_gene().upper()
             category = input.single_gene_category()
             return bubble_plot(
-                get_single_gene_df(d, gene, category), category, gene, input.metric()
+                get_single_gene_df(d, gene, category),
+                category,
+                gene,
+                input.metric(),
+                input.show_legend(),
             )
 
     @output
@@ -308,7 +312,7 @@ def server(input, output, session):
         """PHECODES"""
         if input.use_phe():
             return _tbl("PHECODES", _safe_input(input, "filter_phe"))
-        return _tbl("PHECODES", _safe_input(input, "filter_phe"))
+        return _tbl("PHECODES", None)
 
     @output
     @render.text
