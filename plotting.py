@@ -170,7 +170,7 @@ def add_jitter(df: pd.DataFrame, seed: int = 0, sd: float = 0.045) -> pd.DataFra
 
 
 def heatmap_plot(
-    df, metric="p", use_log=True, pthresh=None
+    df, metric="p", use_log=True, pthresh=None, nan_color="magenta"
 ) -> matplotlib.figure.Figure:
     """
     Make 4 heatmaps (2x2), one per analysis_type.
@@ -218,7 +218,7 @@ def heatmap_plot(
 
         # set bad color to magenta (missing)
         cmap = plt.cm.viridis.copy()
-        cmap.set_bad(color="magenta")
+        cmap.set_bad(color=nan_color)
 
         im = ax.imshow(
             mat.values,
@@ -257,6 +257,11 @@ def bubble_plot(
 
     sizes = d["n_cases"] / d["n_cases"].max() * 800  # adjust scaling factor
 
+    # CONTINUOUS_VARIABLE do not have size
+    no_sizes = False
+    if category == "CONTINUOUS_VARIABLE":
+        no_sizes = True
+
     if metric not in d.columns:
         metric = "p"  # fallback
     vals = d[metric].replace(0, 1e-300)  # avoid log(0)
@@ -264,16 +269,24 @@ def bubble_plot(
     # Use -log10 for better spread
     colors = -np.log10(vals)
 
+    x = "n_controls"
+    if category == "CONTINUOUS_VARIABLE":
+        x = "n"
+
+    print(d.columns)
+
     fig, ax = plt.subplots(figsize=(10, 5))
     sc = ax.scatter(
-        d["n_controls"],
+        d[x],
         d["Description"],
-        s=sizes,
+        s=sizes if not no_sizes else None,
         c=colors,
         cmap="viridis_r",
         alpha=0.8,
         edgecolor="k",
     )
+
+    print("there")
 
     ax.set_xlabel("Number of controls")
     ax.set_ylabel("Phenotype (Description)")
@@ -285,8 +298,10 @@ def bubble_plot(
     cbar = fig.colorbar(sc, ax=ax, shrink=0.8)
     cbar.set_label(f"−log10({metric})")
 
+    print("category:")
+    print(category)
     # Legend for bubble sizes
-    if show_legend:
+    if show_legend and not no_sizes:
         for size in [d["n_cases"].min(), d["n_cases"].median(), d["n_cases"].max()]:
             ax.scatter(
                 [],

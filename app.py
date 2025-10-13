@@ -269,7 +269,11 @@ def server(input, output, session):
 
         if str(input.plot_type()) == "Heatmap":
             return heatmap_plot(
-                d, input.metric(), bool(input.neglog10()), float(input.threshold())
+                d,
+                input.metric(),
+                bool(input.neglog10()),
+                float(input.threshold()),
+                str(input.nan_color()),
             )
         if str(input.plot_type()) == "Bubble plot":
             gene = input.single_gene().upper()
@@ -283,7 +287,7 @@ def server(input, output, session):
             )
 
     @output
-    @render.table
+    @render.data_frame
     def tbl_continuous():
         """CONTINUOUS VARIABLES"""
         if input.use_cont():
@@ -291,7 +295,7 @@ def server(input, output, session):
         return _tbl("CONTINUOUS_VARIABLE", None)
 
     @output
-    @render.table
+    @render.data_frame
     def tbl_cv():
         """CARDIOVASCULAR VARIABLES"""
         if input.use_cv():
@@ -299,7 +303,7 @@ def server(input, output, session):
         return _tbl("CV_ENDPOINTS", None)
 
     @output
-    @render.table
+    @render.data_frame
     def tbl_self():
         """SELF REPORTED"""
         if input.use_self():
@@ -307,7 +311,7 @@ def server(input, output, session):
         return _tbl("SELF_REPORTED", None)
 
     @output
-    @render.table
+    @render.data_frame
     def tbl_phecode():
         """PHECODES"""
         if input.use_phe():

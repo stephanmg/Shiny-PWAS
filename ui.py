@@ -48,6 +48,12 @@ def make_ui():
                     ),
                     ui.input_checkbox("neglog10", "Use −log10 scale", value=True),
                     ui.input_checkbox("show_legend", "Show legend", value=True),
+                    ui.HTML(
+                        """
+                       <label for="color">Missing values color:</label>
+                       <input id="nan_color" type="color" value="#FF00FF">
+                    """
+                    ),
                     ui.input_radio_buttons(
                         "plot_type",
                         "Plot type",
@@ -65,7 +71,12 @@ def make_ui():
                         ui.input_selectize(
                             "single_gene_category",
                             "Select category",
-                            choices=["CV_ENDPOINTS", "SELF_REPORTED", "PHECODES"],
+                            choices=[
+                                "CV_ENDPOINTS",
+                                "SELF_REPORTED",
+                                "PHECODES",
+                                "CONTINUOUS_VARIABLE",
+                            ],
                         ),
                     ),
                 ),
@@ -108,11 +119,14 @@ def make_ui():
                 ui.card_header("Phenotypes (top N genes)"),
                 ui.navset_pill(
                     ui.nav_panel(
-                        "Continuous variables (CVs)", ui.output_table("tbl_continuous")
+                        "Continuous variables (CVs)",
+                        ui.output_data_frame("tbl_continuous"),
                     ),
-                    ui.nav_panel("Cardiovascular endpoints", ui.output_table("tbl_cv")),
-                    ui.nav_panel("Self reported", ui.output_table("tbl_self")),
-                    ui.nav_panel("Phecodes", ui.output_table("tbl_phecode")),
+                    ui.nav_panel(
+                        "Cardiovascular endpoints", ui.output_data_frame("tbl_cv")
+                    ),
+                    ui.nav_panel("Self reported", ui.output_data_frame("tbl_self")),
+                    ui.nav_panel("Phecodes", ui.output_data_frame("tbl_phecode")),
                 ),
             ),
             ui.card(
