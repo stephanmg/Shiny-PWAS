@@ -8,12 +8,15 @@ def make_ui():
         #######################################################################
         ui.sidebar(
             ui.img(src="logo_pwas.png", style="width:100%; max-width:340px;"),
-            ui.input_text_area(
-                "genes",
-                "Gene names (comma or newline separated - case insensitive)",
-                value="METTL2A\nPCSK9",
-                width="100%",
-                height="120px",
+            ui.card(
+                ui.card_header("Select Genes"),
+                ui.input_text_area(
+                    "genes",
+                    "Gene symbols (comma or newline separated, any case)",
+                    value="METTL2A\nPCSK9",
+                    width="100%",
+                    height="120px",
+                ),
             ),
             ui.card(
                 ui.card_header("Filter phenotypes by category"),
@@ -23,6 +26,8 @@ def make_ui():
                     ui.input_checkbox("use_self", "Filter Self reported", value=False),
                     ui.input_checkbox("use_phe", "Filter Phecodes", value=False),
                 ),
+                ui.card_header("Options"),
+                ui.input_checkbox("preset", "Select from database", value=False),
             ),
             ui.output_ui("filters_nav"),
             ui.input_action_button("btn_phenos", "Load phenotypes"),
@@ -46,12 +51,12 @@ def make_ui():
                         },
                         selected="0.05",
                     ),
-                    ui.input_checkbox("neglog10", "Use −log10 scale", value=True),
+                    ui.input_checkbox("neglog10", "Use −log10 scale", value=False),
                     ui.input_checkbox("show_legend", "Show legend", value=True),
                     ui.HTML(
                         """
                        <label for="color">Missing values color:</label>
-                       <input id="nan_color" type="color" value="#FF00FF">
+                       <input id="nan_color" type="color" value="#FF00FF" oninput="Shiny.setInputValue('nan_color', this.value)">
                     """
                     ),
                     ui.input_radio_buttons(

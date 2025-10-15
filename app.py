@@ -46,6 +46,7 @@ def server(input, output, session):
     dl_msg = reactive.Value(
         "Click 'Download CSV' to save the combined table with all rows."
     )
+    nan_color = "#FF00FF"
 
     ###########################################################################
     # Utility / helper functions
@@ -54,6 +55,11 @@ def server(input, output, session):
         """Tables: Get top N genes per endpoint"""
         # Get full dataframe
         df = df_results.get()
+
+        # If we want to copy and paste from a list rather than use presets
+        if filters:
+            if not input.preset():
+                filters = filters.split("\n")
 
         # No data loaded or empty data frame of results
         if df is None or df.empty:
@@ -91,19 +97,23 @@ def server(input, output, session):
             print(f"Input {name} not yet created on UI", file=sys.stderr)
             return None
 
-    def _make_selectize(id_, label, choices):
-        return ui.input_selectize(
-            id_,
-            label,
-            choices=choices,
-            multiple=True,
-            selected=sel_keep.get(id_, []),
-            options={
-                "create": True,
-                "persist": False,
-                "placeholder": "Type to search…",
-            },
-        )
+    def _make_selectize(id_, label, choices, preset=True):
+        if preset:
+            return ui.input_selectize(
+                id_,
+                label,
+                choices=choices,
+                multiple=True,
+                selected=sel_keep.get(id_, []),
+                options={
+                    "create": True,
+                    "persist": False,
+                    "placeholder": "Type to search…",
+                },
+            )
+        else:
+            print("adding text area")
+            return ui.input_text_area(id_, label)
 
     ###########################################################################
     # Effects and events
@@ -114,6 +124,12 @@ def server(input, output, session):
         "filter_self": [],
         "filter_phe": [],
     }
+
+    @reactive.Effect
+    @reactive.event(input.nan_color)
+    def _nan_color():
+        nan_color = input["nan_color"]()
+        print(f"nan_color: {nan_color}")
 
     @reactive.Effect
     @reactive.event(input.filter_cont)
@@ -242,7 +258,26 @@ def server(input, output, session):
             ),
             "filter_phe": _safe_input(input, "filter_phe") if input.use_phe() else None,
         }
+
+        # if we do not with to use select from database
+        if not input.preset():
+            filters["filter_cont"] = (
+                input.filter_cont().split("\n") if input.use_cont() else None
+            )
+            filters["filter_cv"] = (
+                input.filter_cv().split("\n") if input.use_cv() else None
+            )
+            filters["filter_self"] = (
+                input.filter_self().split("\n") if input.use_self() else None
+            )
+            filters["filter_phe"] = (
+                input.filter_phe().split("\n") if input.use_phe() else None
+            )
+
         d = prepare_plot_df(df, metric, limit, outcome_catalog(), filters)
+
+        print("prepared plot:")
+        print(d)
 
         if d.empty or input.plot_type() is None:
             fig, ax = plt.subplots()
@@ -268,12 +303,14 @@ def server(input, output, session):
             return bar_plot(d, input.show_legend())
 
         if str(input.plot_type()) == "Heatmap":
+            print("nan_color:")
+            print(nan_color)
             return heatmap_plot(
                 d,
                 input.metric(),
                 bool(input.neglog10()),
                 float(input.threshold()),
-                str(input.nan_color()),
+                str(nan_color),
             )
         if str(input.plot_type()) == "Bubble plot":
             gene = input.single_gene().upper()
@@ -339,6 +376,7 @@ def server(input, output, session):
                         "filter_cont",
                         "Select continuous variables",
                         get_continuous_labels(),
+                        input.preset(),
                     ),
                 )
             )
@@ -347,7 +385,10 @@ def server(input, output, session):
                 ui.nav_panel(
                     "CV endpoints",
                     _make_selectize(
-                        "filter_cv", "Select CV endpoints", get_cv_labels()
+                        "filter_cv",
+                        "Select CV endpoints",
+                        get_cv_labels(),
+                        input.preset(),
                     ),
                 )
             )
@@ -359,6 +400,7 @@ def server(input, output, session):
                         "filter_self",
                         "Select self reported",
                         get_self_reported_labels(),
+                        input.preset(),
                     ),
                 )
             )
@@ -367,7 +409,10 @@ def server(input, output, session):
                 ui.nav_panel(
                     "Phecodes",
                     _make_selectize(
-                        "filter_phe", "Select phecodes", get_phecode_labels()
+                        "filter_phe",
+                        "Select phecodes",
+                        get_phecode_labels(),
+                        input.preset(),
                     ),
                 )
             )

@@ -170,12 +170,19 @@ def add_jitter(df: pd.DataFrame, seed: int = 0, sd: float = 0.045) -> pd.DataFra
 
 
 def heatmap_plot(
-    df, metric="p", use_log=True, pthresh=None, nan_color="magenta"
+    df,
+    metric="p",
+    use_log=True,
+    pthresh=None,
+    nan_color="#FF00FF",
 ) -> matplotlib.figure.Figure:
     """
     Make 4 heatmaps (2x2), one per analysis_type.
     df must have columns: gene, analysis_type, Description, and the metric (p or q).
     """
+    print("dataframe:")
+    print(df)
+    df.to_csv("debug.csv")
     if df is None or df.empty:
         fig, ax = plt.subplots()
         ax.text(0.5, 0.5, "No data", ha="center", va="center")
@@ -214,19 +221,31 @@ def heatmap_plot(
             continue
 
         # pivot: rows=Description, cols=genes
-        mat = sub.pivot(index="Description", columns="gene", values="_val").fillna(0)
+        # mat = sub.pivot(index="Description", columns="gene", values="_val").fillna(0)
+
+        # Re-index to convert missing values to NaN values (otherwise matplotlib
+        # renders missing values with default foreground color, which is white,
+        # but we want to use the NaN color we set for the colormap via set_bad(...))
+        all_desc = sub["Description"].unique()
+        all_genes = sub["gene"].unique()
+        # mat = sub.pivot(index="Description", columns="gene", values="_val")
+
+        mat = sub.pivot(index="Description", columns="gene", values="_val").reindex(
+            index=all_desc, columns=all_genes
+        )
 
         # set bad color to magenta (missing)
         cmap = plt.cm.viridis.copy()
         cmap.set_bad(color=nan_color)
 
+        # plot finally
         im = ax.imshow(
             mat.values,
             aspect="auto",
             interpolation="nearest",
             vmin=vmin,
             vmax=vmax,
-            cmap="viridis",
+            cmap=cmap,
         )
 
         ax.set_title(KIND_LABEL[kind])
