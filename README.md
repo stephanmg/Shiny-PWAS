@@ -18,6 +18,8 @@ Shiny application for retrieving data for analysis from the ExPheWAS browser via
 
 Website: https://shiny.iaas.uni-bonn.de/Shiny-PWAS
 
+How to gain access: Contact author of the Shiny-PWAS by email.
+
 ## Installation
 
 See `requirements.txt` for regular users. Developers need to install also `requirements-dev.txt`.
