@@ -56,7 +56,7 @@ def server(input, output, session):
         # Get full dataframe
         df = df_results.get()
 
-        # If we want to copy and paste from a list rather than use presets
+        # If we want to copy and paste from a list rather than use presets from database
         if filters:
             if not input.preset():
                 filters = filters.split("\n")
@@ -112,7 +112,6 @@ def server(input, output, session):
                 },
             )
         else:
-            print("adding text area")
             return ui.input_text_area(id_, label)
 
     ###########################################################################
@@ -128,6 +127,7 @@ def server(input, output, session):
     @reactive.Effect
     @reactive.event(input.nan_color)
     def _nan_color():
+        # TODO: debug this
         nan_color = input["nan_color"]()
         print(f"nan_color: {nan_color}")
 
@@ -259,7 +259,7 @@ def server(input, output, session):
             "filter_phe": _safe_input(input, "filter_phe") if input.use_phe() else None,
         }
 
-        # if we do not with to use select from database
+        # If we want to copy and paste from a list rather than use presets from database
         if not input.preset():
             filters["filter_cont"] = (
                 input.filter_cont().split("\n") if input.use_cont() else None
@@ -275,9 +275,6 @@ def server(input, output, session):
             )
 
         d = prepare_plot_df(df, metric, limit, outcome_catalog(), filters)
-
-        print("prepared plot:")
-        print(d)
 
         if d.empty or input.plot_type() is None:
             fig, ax = plt.subplots()

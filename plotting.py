@@ -220,16 +220,11 @@ def heatmap_plot(
             ax.set_axis_off()
             continue
 
-        # pivot: rows=Description, cols=genes
-        # mat = sub.pivot(index="Description", columns="gene", values="_val").fillna(0)
-
         # Re-index to convert missing values to NaN values (otherwise matplotlib
         # renders missing values with default foreground color, which is white,
         # but we want to use the NaN color we set for the colormap via set_bad(...))
         all_desc = sub["Description"].unique()
         all_genes = sub["gene"].unique()
-        # mat = sub.pivot(index="Description", columns="gene", values="_val")
-
         mat = sub.pivot(index="Description", columns="gene", values="_val").reindex(
             index=all_desc, columns=all_genes
         )
