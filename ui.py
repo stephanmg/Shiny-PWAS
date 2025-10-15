@@ -113,12 +113,15 @@ def make_ui():
         #######################################################################
         # MAIN PANEL (RIGHT)
         #######################################################################
-        ui.tags.style(".content-wrapper {max-width: 1100px; margin: 0 auto;}"),
+        ui.tags.style(".content-wrapper {max-width: 1200px; margin: 0 auto;}"),
         ui.div(
             {"class": "content-wrapper"},
             ui.card(
                 ui.card_header("Plot of selected metric by analysis type"),
-                ui.input_checkbox("single_plot", "Single plot", value=False),
+                ui.panel_conditional(
+                    "input.plot_type == 'Heatmap'",
+                    ui.input_checkbox("single_plot", "Single plot", value=False),
+                ),
                 ui.panel_conditional(
                     "input.single_plot == true",
                     ui.input_selectize(
@@ -132,7 +135,24 @@ def make_ui():
                         ],
                     ),
                 ),
-                ui.output_plot("plot_out", height="400px"),
+                ui.input_slider(
+                    "plot_height",
+                    "Plot height (px):",
+                    min=200,
+                    max=2000,
+                    value=360,
+                    step=100,
+                ),
+                ui.input_slider(
+                    "plot_width",
+                    "Plot width (px):",
+                    min=200,
+                    max=1100,
+                    value=1100,
+                    step=100,
+                ),
+                ui.output_ui("plot_ui"),
+                # ui.output_plot("plot_out", height="400px"),
             ),
             ui.card(
                 ui.card_header("Phenotypes (top N genes)"),

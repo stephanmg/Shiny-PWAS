@@ -227,6 +227,13 @@ def server(input, output, session):
         return df
 
     @output
+    @render.ui
+    def plot_ui():
+        height = f"{input.plot_height()}px"
+        width = f"{input.plot_width()}px"
+        return ui.output_plot("plot_out", width=width, height=height)
+
+    @output
     @render.plot
     def plot_out():
         # Get cached df
