@@ -175,14 +175,13 @@ def heatmap_plot(
     use_log=True,
     pthresh=None,
     nan_color="#FF00FF",
+    single_plot=False,
+    choice=None,
 ) -> matplotlib.figure.Figure:
     """
     Make 4 heatmaps (2x2), one per analysis_type.
     df must have columns: gene, analysis_type, Description, and the metric (p or q).
     """
-    print("dataframe:")
-    print(df)
-    df.to_csv("debug.csv")
     if df is None or df.empty:
         fig, ax = plt.subplots()
         ax.text(0.5, 0.5, "No data", ha="center", va="center")
@@ -206,13 +205,23 @@ def heatmap_plot(
     d["_val"] = -np.log10(vals) if use_log else vals
 
     # draw grid
-    fig, axes = plt.subplots(2, 2, figsize=(12, 8))
-    axes = axes.ravel()
+    if not single_plot:
+        fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+        axes = axes.ravel()
+    else:
+        fig, axes = plt.subplots(1, 1, figsize=(12, 8))
+        axes = [axes]
 
     vmin, vmax = d["_val"].min(), d["_val"].max()
 
-    for ax, kind in zip(axes, KIND_ORDER):
+    plots = KIND_ORDER
+    if single_plot:
+        if choice is not None:
+            plots = [choice]
+
+    for ax, kind in zip(axes, plots):
         sub = d[d["analysis_type"] == kind]
+        print(sub.columns)
         if sub.empty:
             ax.text(
                 0.5, 0.5, f"No data for\n{KIND_LABEL[kind]}", ha="center", va="center"
@@ -223,9 +232,10 @@ def heatmap_plot(
         # Re-index to convert missing values to NaN values (otherwise matplotlib
         # renders missing values with default foreground color, which is white,
         # but we want to use the NaN color we set for the colormap via set_bad(...))
-        all_desc = sub["Description"].unique()
+        x_axis_label = "outcome_id"  # was: Description (but too long)
+        all_desc = sub[x_axis_label].unique()
         all_genes = sub["gene"].unique()
-        mat = sub.pivot(index="Description", columns="gene", values="_val").reindex(
+        mat = sub.pivot(index=x_axis_label, columns="gene", values="_val").reindex(
             index=all_desc, columns=all_genes
         )
 
@@ -247,7 +257,7 @@ def heatmap_plot(
         ax.set_xticks(range(len(mat.columns)))
         ax.set_xticklabels(mat.columns, rotation=45, ha="right")
         ax.set_yticks(range(len(mat.index)))
-        ax.set_yticklabels(mat.index, fontsize=6)
+        ax.set_yticklabels(mat.index, fontsize=4)
 
         cbar = fig.colorbar(im, ax=ax, shrink=0.7)
         cbar.set_label(f"-log10({metric})" if use_log else metric)

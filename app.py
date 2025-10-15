@@ -229,7 +229,7 @@ def server(input, output, session):
     @output
     @render.plot
     def plot_out():
-        # Get cache df
+        # Get cached df
         df = prepared_df()
 
         if df is None or df.empty:
@@ -300,14 +300,15 @@ def server(input, output, session):
             return bar_plot(d, input.show_legend())
 
         if str(input.plot_type()) == "Heatmap":
-            print("nan_color:")
-            print(nan_color)
+            print(bool(input.single_plot()))
             return heatmap_plot(
                 d,
                 input.metric(),
                 bool(input.neglog10()),
                 float(input.threshold()),
                 str(nan_color),
+                bool(input.single_plot()),
+                str(input.choice()),
             )
         if str(input.plot_type()) == "Bubble plot":
             gene = input.single_gene().upper()

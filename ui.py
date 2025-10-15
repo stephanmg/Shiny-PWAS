@@ -118,7 +118,21 @@ def make_ui():
             {"class": "content-wrapper"},
             ui.card(
                 ui.card_header("Plot of selected metric by analysis type"),
-                ui.output_plot("plot_out", height="380px"),
+                ui.input_checkbox("single_plot", "Single plot", value=False),
+                ui.panel_conditional(
+                    "input.single_plot == true",
+                    ui.input_selectize(
+                        "choice",
+                        "Choose single plot",
+                        choices=[
+                            "CV_ENDPOINTS",
+                            "SELF_REPORTED",
+                            "PHECODES",
+                            "CONTINUOUS_VARIABLE",
+                        ],
+                    ),
+                ),
+                ui.output_plot("plot_out", height="400px"),
             ),
             ui.card(
                 ui.card_header("Phenotypes (top N genes)"),
