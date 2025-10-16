@@ -177,6 +177,8 @@ def heatmap_plot(
     nan_color="#FF00FF",
     single_plot=False,
     choice=None,
+    fontsize=8,
+    display_name="Description",
 ) -> matplotlib.figure.Figure:
     """
     Make 4 heatmaps (2x2), one per analysis_type.
@@ -233,6 +235,7 @@ def heatmap_plot(
         # renders missing values with default foreground color, which is white,
         # but we want to use the NaN color we set for the colormap via set_bad(...))
         x_axis_label = "outcome_id"  # was: Description (but too long)
+        x_axis_label = display_name
         all_desc = sub[x_axis_label].unique()
         all_genes = sub["gene"].unique()
         mat = sub.pivot(index=x_axis_label, columns="gene", values="_val").reindex(
@@ -257,7 +260,7 @@ def heatmap_plot(
         ax.set_xticks(range(len(mat.columns)))
         ax.set_xticklabels(mat.columns, rotation=45, ha="right")
         ax.set_yticks(range(len(mat.index)))
-        ax.set_yticklabels(mat.index, fontsize=4)
+        ax.set_yticklabels(mat.index, fontsize=fontsize)
 
         cbar = fig.colorbar(im, ax=ax, shrink=0.7)
         cbar.set_label(f"-log10({metric})" if use_log else metric)

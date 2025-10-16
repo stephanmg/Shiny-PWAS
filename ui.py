@@ -84,6 +84,14 @@ def make_ui():
                             ],
                         ),
                     ),
+                    ui.panel_conditional(
+                        "input.plot_type == 'Heatmap'",
+                        ui.input_selectize(
+                            "display_name",
+                            "Display name",
+                            choices=["Description", "outcome_id"],
+                        ),
+                    ),
                 ),
                 open=False,
                 multiple=True,
@@ -103,6 +111,9 @@ def make_ui():
                     ),
                     ui.input_numeric(
                         "limit", "Max rows per gene per group", value=1e6, min=1, step=1
+                    ),
+                    ui.input_numeric(
+                        "fontsize", "Size for labels", value=4, min=4, max=12, step=1
                     ),
                 ),
                 open=False,

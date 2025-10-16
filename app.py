@@ -316,6 +316,8 @@ def server(input, output, session):
                 str(nan_color),
                 bool(input.single_plot()),
                 str(input.choice()),
+                float(input.fontsize()),
+                str(input.display_name()),
             )
         if str(input.plot_type()) == "Bubble plot":
             gene = input.single_gene().upper()
