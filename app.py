@@ -89,6 +89,31 @@ def server(input, output, session):
             df = df[df[str(input.metric())] < float(input.threshold())]
         return df
 
+    def _filter_for_parameters(
+        df: pd.DataFrame,
+        number_of_required_parameters: int = 1,
+        allowed_labels: list[str] = [],
+    ):
+        """Filter by number of features for gene"""
+        if number_of_required_parameters > 1:
+            cv_match = df[
+                (df["analysis_type"] == "CONTINUOUS_VARIABLE")
+                & (df["outcome_label"].isin(allowed_labels))
+            ]
+
+            # genes with at least 8 matching rows
+            genes_to_keep = cv_match.groupby("gene").size().loc[lambda s: s >= 8].index
+
+            final_df = df[
+                (df["analysis_type"] != "CONTINUOUS_VARIABLE")
+                | (
+                    (df["analysis_type"] == "CONTINUOUS_VARIABLE")
+                    & (df["gene"].isin(genes_to_keep))
+                )
+            ]
+            return final_df
+        return df
+
     def _safe_input(input, name):
         """Safe get conditional input panels which haven't been added to the UI"""
         try:
@@ -96,6 +121,9 @@ def server(input, output, session):
         except AttributeError:
             print(f"Input {name} not yet created on UI", file=sys.stderr)
             return None
+
+    def _make_parameters_filter(id_, label):
+        return ui.input_checkbox(id_, label, value=False)
 
     def _make_selectize(id_, label, choices, preset=True):
         if preset:
@@ -254,22 +282,9 @@ def server(input, output, session):
             from plotting import FILTER_MAP
             from util import filter_by_analysis_type_and_any_string
 
-            print("filters:")
-            print(filters)
-            print("right before filtering")
-            print(df)
-            print(len(df.index))
-            df.to_csv("debug3.csv")
-            print("my filters:")
-            print(repr(filters))
             df = filter_by_analysis_type_and_any_string(
                 df, filters, FILTER_MAP, None, True, False
             )
-            df.to_csv("debug4.csv")
-            print("right after filtering")
-            print(df)
-            print(len(df.index))
-
         else:
             # TODO: Implement in the case of data selected with selection field from database preset
             print("Filtering for values from database currently not implemented")
@@ -302,6 +317,12 @@ def server(input, output, session):
         df = df_results.get()
         # global filter for p or q value
         df = _filter_for_p_or_q_value(df)
+        # filter for parameters which contain at least (number of required parmaeters) parameters for Continuous variables
+        df = _filter_for_parameters(
+            df,
+            input.number_of_required_parameters(),
+            input.filter_cont().split("\n") if input.use_cont() else [],
+        )
         return df
 
     @output
