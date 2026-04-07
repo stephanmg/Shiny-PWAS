@@ -208,6 +208,84 @@ def server(input, output, session):
             dl_msg.set("No data to download.")
             return
         # TODO: Yield all data currently, perhaps want filtering here too before download?
+
+        # If we want to copy and paste from a list rather than use presets from database
+
+        print("alter df")
+        print(len(df.index))
+        print(df)
+
+        df.to_csv("debug1.csv")
+
+        filters = {
+            "filter_cont": (
+                _safe_input(input, "filter_cont") if input.use_cont() else None
+            ),
+            "filter_cv": _safe_input(input, "filter_cv") if input.use_cv() else None,
+            "filter_self": (
+                _safe_input(input, "filter_self") if input.use_self() else None
+            ),
+            "filter_phe": _safe_input(input, "filter_phe") if input.use_phe() else None,
+        }
+
+        if not input.preset():
+            filters["filter_cont"] = (
+                input.filter_cont().split("\n") if input.use_cont() else []
+            )
+            filters["filter_cv"] = (
+                input.filter_cv().split("\n") if input.use_cv() else []
+            )
+            filters["filter_self"] = (
+                input.filter_self().split("\n") if input.use_self() else []
+            )
+            filters["filter_phe"] = (
+                input.filter_phe().split("\n") if input.use_phe() else []
+            )
+            # If user provides no filtering, i.e. empty string, we need to provide a empty list [] as None is reserved for no-filtering for a given category
+            for k, v in filters.items():
+                if (
+                    isinstance(v, list)
+                    and len(v) == 1
+                    and (v[0] == "" or (isinstance(v[0], str) and v[0].strip() == ""))
+                ):
+                    filters[k] = []
+            for k, v in filters.items():
+                filters[k] = [x for x in v if x.strip()]
+            from plotting import FILTER_MAP
+            from util import filter_by_analysis_type_and_any_string
+
+            print("filters:")
+            print(filters)
+            print("right before filtering")
+            print(df)
+            print(len(df.index))
+            df.to_csv("debug3.csv")
+            print("my filters:")
+            print(repr(filters))
+            df = filter_by_analysis_type_and_any_string(
+                df, filters, FILTER_MAP, None, True, False
+            )
+            df.to_csv("debug4.csv")
+            print("right after filtering")
+            print(df)
+            print(len(df.index))
+
+        else:
+            # TODO: Implement in the case of data selected with selection field from database preset
+            print("Filtering for values from database currently not implemented")
+
+        print("gefiltereted df")
+        print(len(df.index))
+        print(df)
+
+        # Filter for p or q value
+        df = df[df[input.metric()] < float(input.threshold())]
+
+        print("gefiltereted df p value")
+        print(len(df.index))
+        print(df)
+        df.to_csv("debug2.csv")
+
         _log("User downloaded CSV file")
         yield df.to_csv(index=False).encode("utf-8")
 
